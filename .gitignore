@@ -1,0 +1,9 @@
+*.ex5
+*.log
+*.tmp
+*.bak
+.idea/
+.vscode/
+Tester/
+MQL5/Logs/
+

@@ -1,0 +1,30 @@
+# Asset profiles
+
+Profiles are explicit configuration: `CRYPTO`, `GOLD`, `FOREX`, `INDEX`, or `GENERIC`. Symbol strings are not a reliable asset-class classifier and are never used to infer the profile. Profiles describe intended policy defaults—sessions, calendar usage, weekend policy, spread interpretation, and volatility expectations—while all sizing and constraints use the broker-reported symbol specification.
+
+## Broker-provided Bitcoin
+
+An MT5 Bitcoin instrument is broker-defined. It might be named `BTCUSD`, `BTCUSDm`, `BTCUSD.a`, `BTCUSDT`, or something else, but the code assumes none of these and does not represent spot-exchange trading. The BTC preset disables session and news filtering initially, blocks weekend trading until broker hours are verified, and contains an unvalidated spread placeholder.
+
+Before research, obtain from Shawon:
+
+- broker name and account type;
+- exact Bitcoin symbol;
+- contract size/specification;
+- trading hours and weekend availability;
+- commission and spread behavior;
+- swap/financing;
+- minimum lot, maximum lot, and volume step;
+- leverage;
+- stop-distance and freeze restrictions.
+
+Do not guess them. Compare the MT5 Specification dialog with the EA's `SYMBOL_VALID` initialization log.
+
+The MT5 Economic Calendar is macroeconomic, not a complete crypto-event feed. It cannot protect Bitcoin research from exchange, protocol, regulatory, liquidation, or crypto-industry events.
+
+## Gold / XAUUSD
+
+Gold uses the same EA and modules. Its preset demonstrates different point-spread limits, a server-time session window, weekday policy, and enabled USD high-impact calendar filtering. Exact symbol suffix, hours, point size, tick economics, commissions, and thresholds must still be validated with the broker. No separate Gold EA exists.
+
+Future Forex, index, Gold, and crypto presets should configure policy without copying core code.
+
