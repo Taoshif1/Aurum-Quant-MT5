@@ -18,9 +18,9 @@ public:
    {
       if(BarsCalculated(m_fast_handle)<m_slow || BarsCalculated(m_slow_handle)<m_slow) return TREND_DATA_NOT_READY;
       double f[1],s[1]; if(CopyBuffer(m_fast_handle,0,1,1,f)!=1 || CopyBuffer(m_slow_handle,0,1,1,s)!=1) return TREND_DATA_NOT_READY;
+      if(!MathIsValidNumber(f[0]) || !MathIsValidNumber(s[0]) || f[0]<=0 || s[0]<=0) return TREND_DATA_NOT_READY;
       if(f[0]>s[0]) return TREND_BULLISH; if(f[0]<s[0]) return TREND_BEARISH; return TREND_NEUTRAL;
    }
    void Shutdown() { if(m_fast_handle!=INVALID_HANDLE) IndicatorRelease(m_fast_handle); if(m_slow_handle!=INVALID_HANDLE) IndicatorRelease(m_slow_handle); }
 };
 #endif
-

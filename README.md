@@ -11,6 +11,7 @@ This repository is a foundation, not a profitable strategy. It performs no optim
 - `EnableOrderSubmission=false` is a separate master lock in every supplied preset.
 - Essential broker symbol data and risk inputs fail closed.
 - The foundation Strategy Engine reports trend readiness but never produces buy/sell candidates.
+- Every request path rechecks operating mode, the master lock, account type, and unique closed-bar identity; LIVE is never enabled by supplied presets.
 
 ## Install in MetaTrader 5
 
@@ -21,6 +22,12 @@ This repository is a foundation, not a profitable strategy. It performs no optim
 5. Open `AurumQuantEA.mq5` in MetaEditor and compile with **F7**.
 6. Attach only in `OBSERVE` while validating broker specifications and logs.
 
+## Compile and validation harness
+
+`tools/Compile-MQL5.ps1` stages the installed official MQL5 standard library in ignored `.build/`, overlays the project includes, and compiles both the EA and `Tests/AurumQuantValidation.mq5`. It accepts alternate MetaEditor and terminal-data paths. Success requires the literal compiler result `0 errors, 0 warnings` for both targets.
+
+The shared validation suite contains deterministic synthetic risk, normalization, stop, daily-guard, and execution-lock cases. It runs during EA initialization by default and can also run from `Tests/AurumQuantValidation.mq5`. Require `AURUM|SELF_TEST|RESULT|passed=23|failed=0` in the Experts log. It never calls an order method.
+
 The example spread limits are conspicuous research placeholders, expressed in broker points. Replace them only after observing the exact broker symbol. Leaving a configured spread filter at zero causes initialization to fail.
 
 ## Layout
@@ -28,4 +35,3 @@ The example spread limits are conspicuous research placeholders, expressed in br
 The thin EA entrypoint orchestrates reusable modules under `Include/AurumQuant`: broker market data and symbol specifications, experimental trend and strategy state, risk guards, configurable filters, isolated execution, position management hooks, logging, and dashboard.
 
 See [ARCHITECTURE](docs/ARCHITECTURE.md), [STRATEGY](docs/STRATEGY.md), [ASSET PROFILES](docs/ASSET-PROFILES.md), [RISK MODEL](docs/RISK-MODEL.md), and [BACKTESTING](docs/BACKTESTING.md).
-

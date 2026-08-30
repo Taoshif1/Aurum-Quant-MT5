@@ -12,6 +12,11 @@ public:
    }
    static bool CanOpen(string symbol,ulong magic,int maximum,string &reason)
    { int n=Count(symbol,magic); if(n>=maximum) { reason=StringFormat("position limit %d/%d",n,maximum); return false; } reason="OK"; return true; }
+   static bool OwnOrder(ulong ticket,string symbol,ulong magic)
+   { return ticket>0 && OrderSelect(ticket) && OrderGetString(ORDER_SYMBOL)==symbol && (ulong)OrderGetInteger(ORDER_MAGIC)==magic; }
+   static bool OwnHistoryOrder(ulong ticket,string symbol,ulong magic)
+   { return ticket>0 && HistoryOrderSelect(ticket) && HistoryOrderGetString(ticket,ORDER_SYMBOL)==symbol && (ulong)HistoryOrderGetInteger(ticket,ORDER_MAGIC)==magic; }
+   static bool OwnDeal(ulong ticket,string symbol,ulong magic)
+   { return ticket>0 && HistoryDealSelect(ticket) && HistoryDealGetString(ticket,DEAL_SYMBOL)==symbol && (ulong)HistoryDealGetInteger(ticket,DEAL_MAGIC)==magic; }
 };
 #endif
-

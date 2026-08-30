@@ -10,12 +10,17 @@ The asset profile selects policy defaults; it never replaces actual broker speci
 
 - `Core`: settings/enums, transition logging, broker symbol snapshot, new-bar detection.
 - `Strategy`: experimental EMA trend state, pattern research functions, and breakout/pullback state interfaces. No candidate-producing rules exist yet.
+- `Strategy/IStrategy`: plugin boundary. The current BreakoutPullback scaffold can later coexist with TrendContinuation, VolatilityBreakout, or MeanReversion without changing risk/execution modules.
+- `Strategy/MarketRegime`: inert interface returning `DATA_NOT_READY` or `TRANSITION` until ATR/normalized volatility, slope, ADX-style strength, and compression thresholds are approved.
+- `Strategy/SignalQuality`: unweighted evidence container for trend, breakout, pullback, confirmation, volatility, execution quality, and risk quality. It cannot trigger trades.
 - `Risk`: broker-aware volume calculation, start-of-day equity guard, and symbol-plus-magic position counting.
 - `Filters`: point-based spread threshold, server-time session window, configurable weekend policy, and MT5 Economic Calendar high-impact currency window.
 - `Trading`: the only order boundary. OBSERVE and the master safety lock are enforced here. Position management is scoped to future caller-selected EA tickets.
 - `UI`: chart diagnostic dashboard.
 
-`OnTick` refreshes market/filter/guard/dashboard state and is the future home of enabled open-position management. Strategy entry evaluation runs only when `iTime(symbol, EntryTimeframe, 0)` changes, preventing repeated same-bar decisions.
+`OnTick` refreshes market/filter/guard/dashboard state and is the future home of enabled open-position management. A new current-bar timestamp exposes exactly one newly closed bar identity. The identity must differ from the last evaluated bar; the execution boundary independently refuses a repeated signal-bar identity and marks it consumed before contacting the broker. Therefore a rejection cannot be retried on every tick.
+
+Initialization runs a checklist for symbol economics, timeframes, indicator handles, risk inputs, spread/session/news configuration, mode, freshness threshold, persistent daily baseline, and the OBSERVE assertion. Unsafe failures keep the EA loaded for dashboard diagnosis while every execution gate remains closed.
 
 ## Operating modes
 
@@ -23,7 +28,8 @@ The asset profile selects policy defaults; it never replaces actual broker speci
 - `DEMO`: can execute only on an MT5 demo account and only when the separate master switch is explicitly enabled.
 - `LIVE`: can execute only on a real account and only when the separate master switch is explicitly enabled. It is not to be enabled in this research phase.
 
+`CTrade` calls are synchronous. A true function return is insufficient: accepted results are restricted to `TRADE_RETCODE_DONE`, `DONE_PARTIAL`, or `PLACED`. Request type, symbol, volume, intended entry, SL, TP, call result, retcode, broker price, and description are logged once per request.
+
 ## Fail-closed conditions
 
 Initialization or decision flow blocks on invalid point/tick/volume data, disabled symbol trading, invalid configuration, unavailable enabled calendar data, filter rejection, daily limit, or position limit. A configured spread filter requires a positive per-symbol threshold.
-

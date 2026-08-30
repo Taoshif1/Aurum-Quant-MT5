@@ -46,3 +46,8 @@ Threshold arguments are configurable at the function boundary but are not expose
 
 No item above is silently decided by the scaffolding or presets.
 
+## Future modular research
+
+`IAQStrategy` is the common plugin boundary. BreakoutPullback remains the only scaffold; TrendContinuation, VolatilityBreakout, and MeanReversion are named future candidates, not implementations. Market regime states are `TREND_UP`, `TREND_DOWN`, `RANGE`, `HIGH_VOLATILITY`, `LOW_VOLATILITY`, `TRANSITION`, `UNSAFE`, and `DATA_NOT_READY`. Candidate inputs include normalized ATR, trend slope, later-approved ADX-style strength, and compression/expansion.
+
+`AQSignalQuality` stores independent evidence fields without weights. No aggregate score or trading threshold exists. A rule-based baseline must be established before any optional ML work. A later MQL5 ONNX research path may classify regimes or setup-quality probability, with frozen datasets, out-of-sample evaluation, calibration, and fallback behavior; direct price prediction is outside scope without a separate approved case.

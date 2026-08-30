@@ -4,10 +4,12 @@ EnableOrderSubmission=false
 TradeSymbol=
 AssetProfile=2
 MagicNumber=26083002
+RunDeterministicSelfTests=true
 EntryTimeframe=15
 TrendTimeframe=16385
 FastEMAPeriod=50
 SlowEMAPeriod=200
+MaxTickAgeSeconds=120
 RiskPercent=1.0
 DailyLossLimitPercent=3.0
 MaxOpenPositions=1
@@ -33,4 +35,3 @@ BreakEvenDistancePoints=0.0
 EnableTrailingStop=false
 TrailingMethod=0
 TrailingValue=0.0
-

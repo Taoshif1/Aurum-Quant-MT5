@@ -6,4 +6,5 @@
 .vscode/
 Tester/
 MQL5/Logs/
-
+.build/
+metaeditor-*.log
