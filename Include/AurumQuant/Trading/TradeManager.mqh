@@ -1,7 +1,7 @@
 #ifndef AURUM_TRADE_MANAGER_MQH
 #define AURUM_TRADE_MANAGER_MQH
 #include <Trade/Trade.mqh>
-#include <AurumQuant/Core/Config.mqh>
+#include <AurumQuant/Trading/ExecutionPolicy.mqh>
 #include <AurumQuant/Risk/RiskManager.mqh>
 struct AQTradeResult
 {
@@ -39,12 +39,7 @@ public:
    void Init(ENUM_AQ_MODE mode,bool armed,ulong magic,string symbol) { m_mode=mode;m_armed=armed;m_symbol=symbol;m_last_signal_bar=0;m_trade.SetAsyncMode(false);m_trade.SetExpertMagicNumber(magic);m_trade.SetTypeFillingBySymbol(symbol); }
    bool ExecutionAllowed(string &reason)
    {
-      if(m_mode==MODE_OBSERVE) { reason="OBSERVE mode prohibits order submission"; return false; }
-      if(!m_armed) { reason="order submission master switch is OFF"; return false; }
-      if(m_mode==MODE_DEMO && AccountInfoInteger(ACCOUNT_TRADE_MODE)!=ACCOUNT_TRADE_MODE_DEMO) { reason="DEMO mode requires a demo account"; return false; }
-      if(m_mode==MODE_LIVE && AccountInfoInteger(ACCOUNT_TRADE_MODE)!=ACCOUNT_TRADE_MODE_REAL) { reason="LIVE mode requires LIVE plus master lock on a real account"; return false; }
-      if(m_mode!=MODE_DEMO && m_mode!=MODE_LIVE) { reason="unknown operating mode"; return false; }
-      reason="OK"; return true;
+      return AQExecutionPolicy::Allows(m_mode,m_armed,AccountInfoInteger(ACCOUNT_TRADE_MODE),reason);
    }
    bool Buy(datetime signal_bar,string symbol,double volume,double entry,double sl,double tp,string comment,AQTradeResult &result)
    { ResetResult(result);string why;if(!ValidateRequest(AQ_BUY,symbol,volume,entry,sl,tp,why)||!Prepare(signal_bar,result,why)){result.description=why;return false;}bool called=m_trade.Buy(volume,symbol,0,sl,tp,comment);Capture(called,"BUY",volume,entry,sl,tp,result);return result.accepted; }

@@ -3,6 +3,7 @@
 #include <AurumQuant/Risk/RiskManager.mqh>
 #include <AurumQuant/Risk/DailyGuard.mqh>
 #include <AurumQuant/Trading/TradeManager.mqh>
+#include <AurumQuant/Trading/PositionManager.mqh>
 class AQValidationSuite
 {
 private:
@@ -28,6 +29,21 @@ public:
       double loss=0;Check(!AQDailyGuard::Evaluate(10000,500,3,loss)&&Near(loss,0),"daily profit",passed,failed);Check(!AQDailyGuard::Evaluate(10000,-100,3,loss)&&Near(loss,1),"daily small loss",passed,failed);Check(AQDailyGuard::Evaluate(10000,-300,3,loss)&&Near(loss,3),"daily exact limit",passed,failed);Check(AQDailyGuard::Evaluate(10000,-301,3,loss),"daily exceeded limit",passed,failed);
       Check(AQDailyGuard::IsNewBrokerDay(D'2026.08.29 00:00',D'2026.08.30 00:00'),"new broker day detected",passed,failed);Check(!AQDailyGuard::IsNewBrokerDay(D'2026.08.30 00:00',D'2026.08.30 00:00'),"same-day restart preserves baseline key",passed,failed);
       AQTradeManager manager;manager.Init(MODE_OBSERVE,true,123,"SYNTH");Check(!manager.ExecutionAllowed(reason),"OBSERVE blocks even if master switch requested",passed,failed);manager.Init(MODE_LIVE,false,123,"SYNTH");Check(!manager.ExecutionAllowed(reason),"LIVE requires master lock",passed,failed);
+      AQSymbolSpec quarter=Synthetic(0.25,2.5,0.25,2.0,0.25);
+      Check(Near(AQSymbolProfile::NormalizeVolumeDown(quarter,0.79),0.75),"quarter lots retain decimal precision",passed,failed);
+      quarter.volume_max=0.9;Check(Near(AQSymbolProfile::NormalizeVolumeDown(quarter,2.0),0.75),"off-grid maximum floors to grid",passed,failed);
+      quarter.volume_step=0;Check(Near(AQSymbolProfile::NormalizeVolumeDown(quarter,0.8),0),"zero volume step blocked",passed,failed);
+      Check(!AQRiskManager::ValidateStops(s,(ENUM_AQ_DIRECTION)99,90,110,false,reason),"unknown stop direction blocked",passed,failed);
+      Check(!AQSymbolProfile::DirectionAllowed(s,(ENUM_AQ_DIRECTION)99,reason),"unknown execution direction blocked",passed,failed);
+      Check(!AQRiskManager::CalculateVolume(s,10000,1,100,-1,volume,reason),"negative stop price blocked",passed,failed);
+      Check(!AQExecutionPolicy::Allows(MODE_DEMO,true,ACCOUNT_TRADE_MODE_REAL,reason),"DEMO rejects real account",passed,failed);
+      Check(!AQExecutionPolicy::Allows(MODE_LIVE,true,ACCOUNT_TRADE_MODE_DEMO,reason),"LIVE rejects demo account",passed,failed);
+      Check(AQExecutionPolicy::Allows(MODE_DEMO,true,ACCOUNT_TRADE_MODE_DEMO,reason),"armed DEMO policy",passed,failed);
+      Check(AQExecutionPolicy::Allows(MODE_LIVE,true,ACCOUNT_TRADE_MODE_REAL,reason),"armed LIVE policy",passed,failed);
+      Check(!AQExecutionPolicy::Allows((ENUM_AQ_MODE)99,true,ACCOUNT_TRADE_MODE_DEMO,reason),"unknown execution mode blocked",passed,failed);
+      AQPositionManager positions;Check(!positions.ExecutionAllowed(reason),"position manager starts locked",passed,failed);
+      positions.Init(123,"SYNTH",MODE_OBSERVE,true);Check(!positions.ExecutionAllowed(reason),"OBSERVE position mutations blocked",passed,failed);
+      positions.Init(123,"SYNTH",MODE_LIVE,false);Check(!positions.ExecutionAllowed(reason),"position mutations require master lock",passed,failed);
       PrintFormat("AURUM|SELF_TEST|RESULT|passed=%d|failed=%d",passed,failed);return failed==0;
    }
 };
