@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.23 research preview — 2026-09-30
+
+- Add optional break-even by persisted original-R or favorable broker-point distance.
+- Add tighten-only fixed-distance and closed-ATR trailing for owned symbol+magic positions.
+- Persist original entry-to-SL risk before automated stop changes so R-based break-even remains stable after trailing and terminal/EA restarts.
+- Keep all stop mutations behind DEMO/LIVE account-type checks, the master submission lock, fresh symbol data, ownership checks, tick normalization, and broker stop/freeze validation.
+- Keep SWING and R trailing blocked rather than silently approximating them.
+- Extend the shared deterministic suite to 76 assertions; portable CI now covers 14 position-management policy cases and locked management paths.
+- Native MetaEditor compilation and broker/demo modification validation remain pending.
+
 ## 1.2.0 research preview — 2026-09-30
 
 - Implement documented closed-candle breakout/retest v1 with symmetric BUY/SELL rules, frozen breakout level, timeout and invalid-data cancellation.
