@@ -1,4 +1,4 @@
-; Aurum Quant v1.2 - unvalidated research, OBSERVE only
+; Aurum Quant v1.25 - unvalidated research, OBSERVE only
 ; Spread limits are broker-point placeholders; calibrate for your exact symbol.
 OperatingMode=0
 EnableOrderSubmission=false
@@ -6,6 +6,11 @@ TradeSymbol=
 AssetProfile=1
 MagicNumber=26093004
 RunDeterministicSelfTests=true
+RequireCommercialLicense=false
+LicenseEndpoint=
+LicenseKey=
+LicenseTimeoutMs=3000
+LicenseRecheckMinutes=60
 EntryTimeframe=15
 TrendTimeframe=16385
 FastEMAPeriod=50

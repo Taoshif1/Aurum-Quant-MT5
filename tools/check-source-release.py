@@ -79,6 +79,7 @@ def main() -> None:
         "docs/SOURCE-RELEASE.md",
         "docs/COMMERCIAL-RELEASE.md",
         "docs/SUPPORT.md",
+        "docs/LICENSING.md",
         "Presets/BTCUSD-Research.set",
         "Presets/ETHUSD-Research.set",
         "Presets/EURUSD-Research.set",

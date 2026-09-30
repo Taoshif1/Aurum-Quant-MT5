@@ -30,7 +30,7 @@ A candidate manifest keeps these declarations false until separate evidence exis
 - `code_signing_complete`
 - `commercial_ready`
 
-The candidate ZIP therefore proves binary provenance and packaging integrity, not profitability or legal/commercial completeness.
+The candidate ZIP therefore proves binary provenance and packaging integrity, not profitability or legal/commercial completeness. v1.25 has a client-side licensing boundary, but `license_enforcement_complete` remains false until the remote service, license records/admin workflow, deployment, and native MT5 activation tests exist.
 
 ## Final gates still required
 

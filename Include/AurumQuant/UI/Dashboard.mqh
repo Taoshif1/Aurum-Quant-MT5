@@ -22,7 +22,7 @@ public:
    }
    void Render(const AQSettings &c,string engine_state,string symbol_state,string freshness,string execution_lock,string risk_status,datetime evaluation_bar,datetime evaluation_time,ENUM_TREND_STATE trend,ENUM_SIGNAL_STATE signal,double spread,string spread_state,string session_state,string news_state,string weekend_state,double daily_loss,int positions,string decision,string blocked_reason)
    {
-      string s="AURUM QUANT 1.2 | RESEARCH\n";
+      string s="AURUM QUANT 1.25 | RESEARCH\n";
       s+="Engine: "+engine_state+"\nSymbol data: "+symbol_state+"\nData freshness: "+freshness+"\nExecution lock: "+execution_lock+"\nRisk sizing: "+risk_status+"\n";
       s+="Mode: "+AQModeName(c.mode)+"\nAsset profile: "+AQProfileName(c.profile)+"\nSymbol: "+c.symbol+"\n";
       s+=StringFormat("Entry TF: %s | Trend TF: %s\n",EnumToString(c.entry_tf),EnumToString(c.trend_tf));

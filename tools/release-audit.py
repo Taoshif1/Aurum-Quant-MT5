@@ -150,6 +150,7 @@ def main() -> None:
         "EnableResearchStrategy": "false",
         "EnableBreakEven": "false",
         "EnableTrailingStop": "false",
+        "RequireCommercialLicense": "false",
     }
     for key, expected in required_defaults.items():
         require(defaults.get(key) == expected, f"unsafe/missing EA default {key}={defaults.get(key)!r}")
@@ -194,6 +195,13 @@ def main() -> None:
     require(r"passed=78\|failed=0" in read("tools/Collect-Native-Evidence.ps1"), "native evidence collector must enforce 78/0 validation")
     require("compiled_ex5_included=$true" in read("tools/Collect-Native-Evidence.ps1"), "native evidence collector must bind compiled EX5")
     require('"commercial_ready": False' in read("tools/build-commercial-candidate.py"), "commercial candidate must not claim final readiness")
+    require('"license_client_boundary_complete": True' in read("tools/build-commercial-candidate.py"), "commercial candidate must declare license client boundary")
+    require('"license_enforcement_complete": False' in read("tools/build-commercial-candidate.py"), "commercial candidate must not claim deployed license enforcement")
+    license_client = read("Include/AurumQuant/Commercial/LicenseClient.mqh")
+    require('StartsWith(endpoint,"https://")' in license_client, "license client must require HTTPS")
+    require("CRYPT_HASH_SHA256" in license_client, "license client must hash the account fingerprint")
+    require("account_fingerprint=" in license_client, "license request fingerprint field missing")
+    require("account_login=" not in license_client, "license client must not transmit raw account login")
     support_collector = read("tools/Collect-Support-Bundle.ps1")
     require("raw_account_login_included=$false" in support_collector, "support collector must exclude raw account login")
     require("raw_terminal_path_included=$false" in support_collector, "support collector must exclude raw terminal path")

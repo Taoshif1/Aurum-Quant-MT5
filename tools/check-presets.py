@@ -16,6 +16,10 @@ for path in sorted((root/'Presets').glob('*.set')):
     assert values.keys() == inputs, f'{path.name}: missing {inputs-values.keys()}, unknown {values.keys()-inputs}'
     assert values['OperatingMode'] == '0' and values['EnableOrderSubmission'] == 'false', path.name
     assert values['EnableBreakEven'] == 'false' and values['EnableTrailingStop'] == 'false', path.name
+    assert values['RequireCommercialLicense'] == 'false', f'{path.name}: research preset unexpectedly requires commercial license'
+    assert values['LicenseEndpoint'] == '' and values['LicenseKey'] == '', f'{path.name}: shipped preset must not contain license credentials'
+    assert 250 <= int(values['LicenseTimeoutMs']) <= 10000, f'{path.name}: invalid license timeout'
+    assert 1 <= int(values['LicenseRecheckMinutes']) <= 1440, f'{path.name}: invalid license recheck cadence'
     assert values['MagicNumber'] not in magics, f'{path.name}: duplicate magic'
     magics.add(values['MagicNumber'])
     magic = int(values['MagicNumber']); base = int(values['PortfolioMagicBase']); span = int(values['PortfolioMagicSpan'])
