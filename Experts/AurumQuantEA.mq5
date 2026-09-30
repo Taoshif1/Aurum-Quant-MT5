@@ -70,7 +70,7 @@ input group "Portfolio risk guard"
 input ulong PortfolioMagicBase=26093000;
 input int PortfolioMagicSpan=100;
 input double MaxPortfolioRiskPercent=1.0;
-input int MaxPortfolioPositions=3;
+input int MaxPortfolioExposures=3;
 
 input group "Filters"
 input bool EnableSpreadFilter=true;
@@ -125,7 +125,7 @@ int OnInit()
    g_diagnostic.Check(PeriodSeconds(EntryTimeframe)>0 && PeriodSeconds(TrendTimeframe)>0,"invalid timeframe");
    g_diagnostic.Check(RiskPercent>0 && RiskPercent<=100 && DailyLossLimitPercent>0 && DailyLossLimitPercent<=100 && MaxOpenPositions>=1 && RewardRiskRatio>0 && MathIsValidNumber(RewardRiskRatio),"invalid risk inputs");
    g_diagnostic.Check(PortfolioMagicBase>0 && PortfolioMagicSpan>0 && AQPortfolioBudget::MagicInGroup(MagicNumber,PortfolioMagicBase,PortfolioMagicSpan),"MagicNumber is outside the Aurum portfolio magic range");
-   g_diagnostic.Check(MathIsValidNumber(MaxPortfolioRiskPercent) && MaxPortfolioRiskPercent>=RiskPercent && MaxPortfolioRiskPercent<=100 && MaxPortfolioPositions>=1,"invalid portfolio risk limits");
+   g_diagnostic.Check(MathIsValidNumber(MaxPortfolioRiskPercent) && MaxPortfolioRiskPercent>=RiskPercent && MaxPortfolioRiskPercent<=100 && MaxPortfolioExposures>=1,"invalid portfolio risk limits");
    g_diagnostic.Check(!EnableSpreadFilter || (MaxSpreadPoints>0 && MathIsValidNumber(MaxSpreadPoints)),"spread limit must be positive");
    g_diagnostic.Check(!EnableSessionFilter || (SessionStartHour>=0 && SessionStartHour<=23 && SessionEndHour>=0 && SessionEndHour<=23),"invalid session hours");
    g_diagnostic.Check(!EnableNewsFilter || (NewsMinutesBefore>=0 && NewsMinutesAfter>=0 && NewsCurrency!=""),"invalid news configuration");
@@ -153,7 +153,7 @@ void OnTick()
    datetime server=TimeTradeServer();if(g_last_news_check==0 || server-g_last_news_check>=60){g_news=AQNewsFilter::Evaluate(EnableNewsFilter,NewsMinutesBefore,NewsMinutesAfter,NewsCurrency,g_news_state);g_last_news_check=server;}
    bool news_ok=(g_news==NEWS_CLEAR || g_news==NEWS_DISABLED);string daily_reason="daily guard unavailable";bool daily_block=(!g_daily_initialized || g_daily.IsBlocked(g_daily_loss,daily_reason));
    string position_reason;bool position_ok=AQPositionGuard::CanOpen(g_cfg.symbol,MagicNumber,MaxOpenPositions,position_reason);
-   string portfolio_reason;bool portfolio_ok=AQPortfolioGuard::CurrentWithinLimits(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,portfolio_reason);
+   string portfolio_reason;bool portfolio_ok=AQPortfolioGuard::CurrentWithinLimits(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioExposures,MaxPortfolioRiskPercent,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,portfolio_reason);
    int tick_age=INT_MAX;bool fresh=g_symbol_valid && g_market.Fresh(MaxTickAgeSeconds,tick_age);datetime closed_bar=0;bool evaluated=false;
    if(g_engine_ready && fresh && g_market.IsNewBar(closed_bar))
    {
@@ -165,17 +165,17 @@ void OnTick()
    if(g_paused)blocked="entries paused by user";
    string decision=(blocked!=""?"BLOCKED":(EnableResearchStrategy?"WAIT - breakout/retest v1":"OBSERVATION - strategy disabled"));
    bool candidate=evaluated && (g_signal==BUY_CANDIDATE || g_signal==SELL_CANDIDATE);
-   if(!candidate)g_risk_status=(portfolio_ok?StringFormat("Portfolio risk %.2f%% / %.2f%% | exposures %d/%d",g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_exposures,MaxPortfolioPositions):portfolio_reason);
+   if(!candidate)g_risk_status=(portfolio_ok?StringFormat("Portfolio risk %.2f%% / %.2f%% | exposures %d/%d",g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_exposures,MaxPortfolioExposures):portfolio_reason);
    if(candidate)
    {
       string why=blocked;AQOrderPlan plan;
       bool ready=why=="";
       if(ready)ready=AQEntryLimits::Pass(g_cfg.symbol,MagicNumber,MaxEntriesPerDay,CooldownBars,EntryTimeframe,why);
       if(ready)ready=AQOrderPlanner::Build(g_spec,g_signal==BUY_CANDIDATE?AQ_BUY:AQ_SELL,g_strategy.ATR(),ATRMultiplier,RewardRiskRatio,RiskPercent,plan,why);
-      if(ready)ready=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,why);
+      if(ready)ready=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioExposures,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,why);
       if(ready)
       {
-         g_risk_status=StringFormat("%.8f lots | estimated SL loss %.2f | margin %.2f | portfolio after candidate %.2f%% / %.2f%% | exposures %d/%d",plan.volume,plan.estimated_loss,plan.margin,g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_exposures,MaxPortfolioPositions);
+         g_risk_status=StringFormat("%.8f lots | estimated SL loss %.2f | margin %.2f | portfolio after candidate %.2f%% / %.2f%% | exposures %d/%d",plan.volume,plan.estimated_loss,plan.margin,g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_exposures,MaxPortfolioExposures);
          g_log.Event("CANDIDATE",StringFormat("direction=%s|bar=%I64d|entry=%g|sl=%g|tp=%g|volume=%.8f",g_signal==BUY_CANDIDATE?"BUY":"SELL",(long)closed_bar,plan.entry,plan.sl,plan.tp,plan.volume));
          if(g_trader.ExecutionAllowed(why))
          {
@@ -184,7 +184,7 @@ void OnTick()
             {decision="CANDIDATE DISCARDED";why=gate_reason;g_risk_status=why;}
             else
             {
-               bool live_ok=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,gate_reason);
+               bool live_ok=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioExposures,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,gate_reason);
                bool request_accepted=false;
                if(live_ok)
                {
