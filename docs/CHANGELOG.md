@@ -10,6 +10,7 @@
 - Add deterministic research-source packaging with embedded/external SHA-256 manifests, reproducibility checks, independent packaged-preset safety verification and 14-day CI artifacts.
 - Upgrade official GitHub Actions checkout/upload-artifact usage to v7.
 - Add a native broker-capability probe and checksummed evidence collector for compiler logs, deterministic native validation output, broker economics, and optional tester artifacts.
+- Add an independent cross-platform native-evidence verifier with CI self-tests that reject tampered bundles.
 
 ## 1.23 research preview — 2026-09-30
 

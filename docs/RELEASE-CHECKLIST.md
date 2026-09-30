@@ -15,7 +15,7 @@ A price target is not a quality metric. This source preview must not be marketed
 | Official MetaEditor compilation | Pending for v1.24; require zero errors and warnings for EA and validation script |
 | Native self-test | Pending; require passed=78 and failed=0 |
 | Windows install/compile tools | Written; execution on Windows pending |
-| Native evidence capture | Broker probe and PowerShell collector implemented; collector requires three clean compiler logs, native 78/0 validation output, and all-OK broker rows before producing a checksummed evidence manifest |
+| Native evidence capture | Broker probe and PowerShell collector implemented; collector requires three clean compiler logs, native 78/0 validation output, and all-OK broker rows before producing a checksummed evidence manifest; independent Python verifier recomputes hashes and revalidates semantics, with tamper rejection covered in CI |
 | Broker integration | Pending for each intended broker and account mode |
 | Historical real-tick testing | Pending; no performance data claimed |
 | Out-of-sample and demo forward tests | Pending |

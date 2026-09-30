@@ -33,7 +33,7 @@ The installer backs up existing project files and copies source, includes, the v
 4. Attach the EA to the exact broker symbol chart, such as `XAUUSDm`, and load `Presets/AurumQuant/XAUUSD-Research.set`. A blank `TradeSymbol` uses that chart's symbol.
 5. Calibrate `MaxSpreadPoints` against the exact broker symbol. Preset spread values are placeholders. Generic intentionally starts with zero and blocks until configured.
 6. Start in OBSERVE and check diagnostics. Follow [QUICKSTART](docs/QUICKSTART.md) before demo execution.
-7. Run **Scripts → AurumQuantBrokerProbe** with the exact broker symbols you plan to validate. Then use `tools/Collect-Native-Evidence.ps1` to collect clean compiler logs, the 78/0 validation journal, the probe CSV, and optional tester artifacts into one checksummed evidence folder.
+7. Run **Scripts → AurumQuantBrokerProbe** with the exact broker symbols you plan to validate. Then use `tools/Collect-Native-Evidence.ps1` to collect clean compiler logs, the 78/0 validation journal, the probe CSV, and optional tester artifacts into one checksummed evidence folder. Verify that folder independently with `python3 tools/check-native-evidence.py PATH_TO_EVIDENCE_FOLDER`.
 
 ## Presets
 
