@@ -19,6 +19,9 @@ EXACT_FILES = (
     Path("Tests/AurumQuantValidation.mq5"),
     Path("tools/Compile-MQL5.ps1"),
     Path("tools/Install-MQL5.ps1"),
+    Path("tools/check-presets.py"),
+    Path("tools/build-source-release.py"),
+    Path("tools/check-source-release.py"),
 )
 GLOBS = (
     "Include/AurumQuant/**/*.mqh",
