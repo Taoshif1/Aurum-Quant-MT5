@@ -1,5 +1,5 @@
 #property copyright "Aurum Quant MT5 research project"
-#property version   "1.240"
+#property version   "1.250"
 #property strict
 #property description "Multi-asset breakout/retest research EA. Unvalidated strategy."
 
@@ -8,6 +8,7 @@
 #include <AurumQuant/Core/SymbolProfile.mqh>
 #include <AurumQuant/Core/MarketData.mqh>
 #include <AurumQuant/Core/SelfDiagnostic.mqh>
+#include <AurumQuant/Commercial/LicenseClient.mqh>
 #include <AurumQuant/Strategy/TrendEngine.mqh>
 #include <AurumQuant/Strategy/StrategyEngine.mqh>
 #include <AurumQuant/Strategy/CandlePatterns.mqh>
@@ -38,6 +39,13 @@ input string TradeSymbol="";
 input ENUM_ASSET_PROFILE AssetProfile=PROFILE_GENERIC;
 input ulong MagicNumber=26093099;
 input bool RunDeterministicSelfTests=true;
+
+input group "Commercial licensing (inactive by default)"
+input bool RequireCommercialLicense=false;
+input string LicenseEndpoint="";
+input string LicenseKey="";
+input int LicenseTimeoutMs=3000;
+input int LicenseRecheckMinutes=60;
 
 input group "Research timeframes and trend method"
 input ENUM_TIMEFRAMES EntryTimeframe=PERIOD_M15;
@@ -95,13 +103,13 @@ input double TrailingValue=0.0;
 
 AQSettings g_cfg; AQSymbolSpec g_spec; AQLogger g_log; AQMarketData g_market; AQSelfDiagnostic g_diagnostic;
 AQTrendEngine g_trend_engine; AQStrategyEngine g_strategy; AQDailyGuard g_daily;
-AQTradeManager g_trader; AQPositionManager g_positions; AQDashboard g_dashboard; AQPortfolioExecutionLock g_portfolio_lock;
+AQTradeManager g_trader; AQPositionManager g_positions; AQDashboard g_dashboard; AQPortfolioExecutionLock g_portfolio_lock; AQLicenseClient g_license;
 ENUM_TREND_STATE g_trend=TREND_DATA_NOT_READY; ENUM_SIGNAL_STATE g_signal=NO_SETUP; ENUM_NEWS_STATE g_news=NEWS_DISABLED;
 string g_critical="",g_spread_state="",g_session_state="",g_news_state="DISABLED",g_weekend_state="";
 double g_daily_loss=0; bool g_engine_ready=false,g_symbol_valid=false,g_trend_initialized=false,g_daily_initialized=false,g_management_initialized=false;
 double g_portfolio_risk=0,g_portfolio_used_percent=0;int g_portfolio_exposures=0;
 bool g_paused=false;
-string g_risk_status="No candidate evaluated",g_management_status="DISABLED",g_last_decision="";
+string g_risk_status="No candidate evaluated",g_management_status="DISABLED",g_last_decision="",g_license_status="NOT_REQUIRED",g_last_license_status="";
 datetime g_evaluation_bar=0,g_evaluation_time=0,g_last_news_check=0;
 
 void LoadSettings()
@@ -115,6 +123,13 @@ void LoadSettings()
 int OnInit()
 {
    LoadSettings();g_log.Init(g_cfg.symbol,g_cfg.magic);g_diagnostic.Reset();
+   string license_init_reason;g_license.Init(RequireCommercialLicense,LicenseEndpoint,LicenseKey,LicenseTimeoutMs,LicenseRecheckMinutes,license_init_reason);
+   g_license_status=g_license.Status();g_last_license_status=g_license_status;
+   if(RequireCommercialLicense)
+   {
+      if(!EventSetTimer(5))g_log.Event("LICENSE","timer unavailable; new entries remain license-blocked");
+      g_log.Event("LICENSE",g_license_status+" | "+license_init_reason);
+   }
    if(RunDeterministicSelfTests){int tests_passed=0,tests_failed=0;g_diagnostic.Check(AQValidationSuite::Run(tests_passed,tests_failed),StringFormat("deterministic self-tests failed %d",tests_failed));}
    g_diagnostic.Check(g_cfg.symbol!="","symbol is empty");
    g_diagnostic.Check(g_cfg.symbol==_Symbol,"attach EA to the configured symbol chart");
@@ -152,7 +167,18 @@ int OnInit()
    return INIT_SUCCEEDED;
 }
 
-void OnDeinit(const int reason){g_portfolio_lock.Release();g_positions.ShutdownManagement();g_strategy.Shutdown();g_trend_engine.Shutdown();g_dashboard.Clear();g_log.Event("DEINIT",IntegerToString(reason));}
+void OnDeinit(const int reason){EventKillTimer();g_portfolio_lock.Release();g_positions.ShutdownManagement();g_strategy.Shutdown();g_trend_engine.Shutdown();g_dashboard.Clear();g_log.Event("DEINIT",IntegerToString(reason));}
+
+void OnTimer()
+{
+   if(!RequireCommercialLicense)return;
+   string reason;g_license.RefreshIfDue(reason);g_license_status=g_license.Status();
+   if(g_license_status!=g_last_license_status)
+   {
+      g_log.Event("LICENSE",g_license_status+" | "+reason);
+      g_last_license_status=g_license_status;
+   }
+}
 
 void OnTick()
 {
@@ -208,6 +234,11 @@ void OnTick()
          g_log.Event("CANDIDATE",StringFormat("direction=%s|bar=%I64d|entry=%g|sl=%g|tp=%g|volume=%.8f",g_signal==BUY_CANDIDATE?"BUY":"SELL",(long)closed_bar,plan.entry,plan.sl,plan.tp,plan.volume));
          if(g_trader.ExecutionAllowed(why))
          {
+            string license_reason;
+            if(!g_license.AllowsNewEntries(OperatingMode,license_reason))
+            {decision="CANDIDATE ONLY - LICENSE BLOCKED";why=license_reason;g_risk_status=why;}
+            else
+            {
             string gate_reason;
             if(!g_portfolio_lock.Acquire(120,gate_reason))
             {decision="CANDIDATE DISCARDED";why=gate_reason;g_risk_status=why;}
@@ -226,6 +257,7 @@ void OnTick()
                if(request_accepted)g_portfolio_lock.HoldUntilExpiry();
                else g_portfolio_lock.Release();
             }
+            }
          }
          else decision="CANDIDATE ONLY - execution locked";
       }
@@ -237,7 +269,8 @@ void OnTick()
    int count=AQPositionGuard::Count(g_cfg.symbol,MagicNumber);
    string execution_reason;bool execution_allowed=g_trader.ExecutionAllowed(execution_reason);string lock_state=(execution_allowed?"ARMED":"LOCKED: "+execution_reason);string freshness=(fresh?StringFormat("FRESH (%d seconds)",tick_age):StringFormat("STALE/UNAVAILABLE (%d seconds)",tick_age));
    g_dashboard.PauseButton(g_paused);
-   string dashboard_risk=g_risk_status+" | Mgmt: "+g_management_status;
+   g_license_status=g_license.Status();
+   string dashboard_risk=g_risk_status+" | Mgmt: "+g_management_status+" | License: "+g_license_status;
    g_dashboard.Render(g_cfg,(g_engine_ready?"READY":"BLOCKED"),(g_symbol_valid?"VALID":"INVALID"),freshness,lock_state,dashboard_risk,g_evaluation_bar,g_evaluation_time,g_trend,g_signal,spread,g_spread_state,g_session_state,g_news_state,g_weekend_state,g_daily_loss,count,decision,blocked);
 }
 
