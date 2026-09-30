@@ -16,7 +16,7 @@ The EA checks symbol selection/economics, timeframe validity, EMA handles, risk 
 4. Invalid symbol economics, stale ticks, unavailable enabled calendar, invalid risk/volume/stops, daily guard, filters, per-symbol limits, or portfolio risk/position limits block submission.
 5. Positions, active orders, history orders, and deals are owned only when both symbol and magic match.
 6. A `CTrade` call is successful only with an accepted broker retcode.
-7. Armed cross-chart candidates serialize the final portfolio snapshot and submission through one account/range lock; a busy lock discards the candidate instead of queueing it.
+7. Armed cross-chart candidates serialize the final portfolio snapshot and submission through one account/range lock; a busy lock discards the candidate instead of queueing it; accepted submissions keep the shared gate closed until expiry so trade-state propagation cannot reopen a stale portfolio window.
 
 ## Deterministic cases
 
