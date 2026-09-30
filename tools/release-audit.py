@@ -33,8 +33,15 @@ def first_match(pattern: str, text: str, label: str, flags: int = 0) -> str:
 
 
 def count_checks(path: str) -> int:
-    # Shared validation classes use one Check(...) statement per deterministic assertion.
-    return len(re.findall(r"^\s+Check\(", read(path), re.MULTILINE))
+    # Shared validation classes use one Check(...) call per deterministic assertion.
+    # Calls are sometimes chained on one source line, so line-start counting undercounts them.
+    text = read(path)
+    occurrences = len(re.findall(r"\bCheck\(", text))
+    helper_definitions = len(re.findall(r"\bstatic\s+void\s+Check\(", text))
+    count = occurrences - helper_definitions
+    if count < 0:
+        raise RuntimeError(f"invalid Check() count in {path}")
+    return count
 
 
 def main() -> None:
