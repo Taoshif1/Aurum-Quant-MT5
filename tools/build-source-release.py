@@ -22,6 +22,7 @@ EXACT_FILES = (
     Path("tools/check-presets.py"),
     Path("tools/build-source-release.py"),
     Path("tools/check-source-release.py"),
+    Path("tools/release-audit.py"),
 )
 GLOBS = (
     "Include/AurumQuant/**/*.mqh",
