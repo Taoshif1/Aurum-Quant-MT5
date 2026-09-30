@@ -72,7 +72,9 @@ int main(){
   if(!expected){
    account_mode=account;AQPositionManager manager;manager.Init(123,"SYNTH",(ENUM_AQ_MODE)mode,armed);
    position_reads=0;trade_calls=0;
+   int modified=0;
    assert(!manager.Modify(1,90,110));assert(!manager.SafeClose(1));
+   assert(!manager.Manage(true,BE_BY_R,1,0,false,TRAIL_FIXED,0,modified,reason));
    assert(position_reads==0 && trade_calls==0);
   }
   ++policies;
