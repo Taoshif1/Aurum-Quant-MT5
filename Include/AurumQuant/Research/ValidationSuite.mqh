@@ -7,6 +7,7 @@
 #include <AurumQuant/Trading/TradeManager.mqh>
 #include <AurumQuant/Trading/PositionManager.mqh>
 #include <AurumQuant/Research/StrategyValidation.mqh>
+#include <AurumQuant/Research/PositionManagementValidation.mqh>
 class AQValidationSuite
 {
 private:
@@ -59,6 +60,7 @@ public:
       positions.Init(123,"SYNTH",MODE_OBSERVE,true);Check(!positions.ExecutionAllowed(reason),"OBSERVE position mutations blocked",passed,failed);
       positions.Init(123,"SYNTH",MODE_LIVE,false);Check(!positions.ExecutionAllowed(reason),"position mutations require master lock",passed,failed);
       int strategy_passed=0,strategy_failed=0;AQStrategyValidation::Run(strategy_passed,strategy_failed);passed+=strategy_passed;failed+=strategy_failed;
+      int management_passed=0,management_failed=0;AQPositionManagementValidation::Run(management_passed,management_failed);passed+=management_passed;failed+=management_failed;
       PrintFormat("AURUM|SELF_TEST|RESULT|passed=%d|failed=%d",passed,failed);return failed==0;
    }
 };

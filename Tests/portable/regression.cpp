@@ -5,6 +5,7 @@
 #include <AurumQuant/Trading/PositionManager.mqh>
 #include <limits>
 #include <AurumQuant/Research/StrategyValidation.mqh>
+#include <AurumQuant/Research/PositionManagementValidation.mqh>
 #include <AurumQuant/Trading/OrderPlan.mqh>
 #include <AurumQuant/Risk/PortfolioBudget.mqh>
 #include <AurumQuant/Risk/PortfolioLockPolicy.mqh>
@@ -71,13 +72,17 @@ int main(){
   if(!expected){
    account_mode=account;AQPositionManager manager;manager.Init(123,"SYNTH",(ENUM_AQ_MODE)mode,armed);
    position_reads=0;trade_calls=0;
+   int modified=0;
    assert(!manager.Modify(1,90,110));assert(!manager.SafeClose(1));
+   assert(!manager.Manage(true,BE_BY_R,1,0,false,TRAIL_FIXED,0,modified,reason));
    assert(position_reads==0 && trade_calls==0);
   }
   ++policies;
  }
  AQPositionManager defaults;assert(!defaults.ExecutionAllowed(reason));
  int strategy_passed=0,strategy_failed=0;assert(AQStrategyValidation::Run(strategy_passed,strategy_failed));
+ int management_passed=0,management_failed=0;assert(AQPositionManagementValidation::Run(management_passed,management_failed));
  std::cout<<"Strategy assertions: "<<strategy_passed<<" passed, "<<strategy_failed<<" failed\n";
- std::cout<<"PASS: "<<samples<<" volume budgets, "<<policies<<" execution policies, portfolio budgets, lock policy, invalid numeric inputs, locked mutation paths\n";
+ std::cout<<"Position management assertions: "<<management_passed<<" passed, "<<management_failed<<" failed\n";
+ std::cout<<"PASS: "<<samples<<" volume budgets, "<<policies<<" execution policies, portfolio budgets, lock policy, position management, invalid numeric inputs, locked mutation paths\n";
 }

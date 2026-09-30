@@ -12,7 +12,7 @@ Sessions use broker server time. Gold/silver presets use 07:00–20:00; this is 
 
 Load an OBSERVE preset and inspect the on-chart engine, market data, spread and decision fields. Strategy enabled means candidates may appear; it does not mean orders are enabled. CANDIDATE logs record proposed entry, stop, target and volume. If inputs are invalid, correct them and reattach/reinitialize. Indicator data unavailability during bar evaluation cancels the pending setup.
 
-The pause button prevents new entries while the EA stays attached. It does not close trades or cancel broker-held stops. It resets on reinitialization. A candidate blocked during pause is discarded, not queued for resumption.
+The pause button prevents new entries while the EA stays attached. It does not close trades or cancel broker-held stops. If break-even/trailing are enabled and execution is armed, pause does not disable that existing-position protection. It resets on reinitialization. A candidate blocked during pause is discarded, not queued for resumption.
 
 ## Demo and tester activation
 
@@ -22,9 +22,9 @@ The current implementation exposes a LIVE mode but supplied presets never select
 
 ## Multiple assets
 
-Open a separate broker chart for each asset and apply its preset. Unique preset magic numbers are supplied, but copies of the same preset need a different magic. Never run two instances with the same symbol/magic. Use separate terminals/accounts for independent experiments. Existing positions or pending orders on netting symbols block new entries to avoid mixing manual or other-EA exposure.
+Open a separate broker chart for each asset and apply its preset. For a single trading account, keep all Aurum instances that share the portfolio guard inside the same MT5 terminal process; the atomic mutex and original-risk terminal variables are not shared across separate MT5 terminal processes. Unique preset magic numbers are supplied, but copies of the same preset need a different magic. Never run two instances with the same symbol/magic. Use separate terminals/accounts for independent experiments. Existing positions or pending orders on netting symbols block new entries to avoid mixing manual or other-EA exposure.
 
-Daily loss, entry count and cooldown are scoped to symbol/magic. Five instances at 0.25% each can expose more than 0.25% in total. There is no portfolio correlation or aggregate-risk controller in this version.
+Daily loss, entry count and cooldown are scoped to symbol/magic. Cross-symbol Aurum instances additionally share the configured portfolio stop-risk and exposure cap through the reserved magic range. This controller limits grouped estimated stop risk, but it does not model asset correlation.
 
 ## Troubleshooting
 
@@ -37,6 +37,6 @@ Daily loss, entry count and cooldown are scoped to symbol/magic. Five instances 
 | Netting symbol already has a position | Use an isolated symbol/account; the EA will not merge exposure. |
 | Entry cooldown/daily count reached | Wait for the specified bars/day; restart will not erase history. |
 | Strategy data invalid | Allow history/indicators to load and inspect the Experts log. |
-| Break-even/trailing not implemented | Leave both switches off; enabling them blocks initialization. |
+| Break-even/trailing blocked | Check the configured method/value. Break-even supports R or distance. Trailing v1 supports FIXED or ATR only; SWING and R trailing remain unsupported. |
 
 Keep the `AURUM|` entries from the Experts journal when reporting an issue, together with broker symbol properties, terminal build, inputs and the time of the event. Do not share account passwords.
