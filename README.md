@@ -9,7 +9,7 @@ An MQL5 Expert Advisor for broker-provided gold, silver, Bitcoin, Ethereum, fore
 - Closed-candle higher-timeframe EMA trend and channel breakout/retest state machine.
 - ATR stops, reward/risk targets, and broker-calculated account-currency loss and margin estimates.
 - Spread, session, weekend and optional high-impact news filters.
-- Per-instance daily loss guard, plus a cross-symbol Aurum portfolio guard that prices open positions and active orders to their stops, caps combined stop risk, and serializes the final risk recheck plus broker submission across charts.
+- Per-instance daily loss guard, plus a cross-symbol Aurum portfolio guard that prices open positions and active orders to their stops, caps combined stop risk, and serializes the final risk recheck plus broker submission across charts and retains the shared gate after accepted requests until its expiry.
 - Duplicate request identity persisted across terminal restarts; no per-tick retries after a rejected candidate.
 - On-chart status and pause/resume button for new entries. Existing positions remain unchanged by pause.
 - Six OBSERVE presets, source installer with backups, compile helper and portable regression CI.
