@@ -7,6 +7,8 @@
 - Add BUY/SELL R-trailing regressions and fail closed when original risk is unavailable.
 - Extend the shared deterministic suite to 78 assertions; portable position-management coverage is now 16 assertions.
 - Swing trailing remains intentionally unsupported until a swing-window/pivot rule is explicitly specified.
+- Add deterministic research-source packaging with embedded/external SHA-256 manifests, reproducibility checks, independent packaged-preset safety verification and 14-day CI artifacts.
+- Upgrade official GitHub Actions checkout/upload-artifact usage to v7.
 
 ## 1.23 research preview — 2026-09-30
 
