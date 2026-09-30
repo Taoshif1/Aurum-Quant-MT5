@@ -17,6 +17,7 @@ A price target is not a quality metric. This source preview must not be marketed
 | Windows install/compile tools | Written; execution on Windows pending |
 | Native evidence capture | Broker probe and PowerShell collector implemented; collector requires three clean compiler logs, native 78/0 validation output, and all-OK broker rows before producing a checksummed evidence manifest; independent Python verifier recomputes hashes and revalidates semantics, with tamper rejection covered in CI |
 | Broker integration | Pending for each intended broker and account mode |
+| Tester metric extraction | Structured `AURUM|TESTER_STATS` parser implemented with CI self-tests; it emits raw JSON metrics only and rejects malformed/non-finite/inconsistent records |
 | Historical real-tick testing | Pending; no performance data claimed |
 | Out-of-sample and demo forward tests | Pending |
 | Compiled EX5 distribution | Not produced in this environment; source artifact explicitly declares EX5/native compilation absent |
