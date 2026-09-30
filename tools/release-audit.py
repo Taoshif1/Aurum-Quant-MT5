@@ -164,6 +164,7 @@ def main() -> None:
 
     for tool in (
         "tools/check-presets.py",
+        "tools/Collect-Native-Evidence.ps1",
         "tools/build-source-release.py",
         "tools/check-source-release.py",
         "tools/release-audit.py",
@@ -173,6 +174,9 @@ def main() -> None:
             f"source package allowlist missing release tool: {tool}",
         )
 
+    require(r"Tests\AurumQuantBrokerProbe.mq5" in read("tools/Compile-MQL5.ps1"), "compile helper must include broker probe")
+    require(r"Tests\AurumQuantBrokerProbe.mq5" in read("tools/Install-MQL5.ps1"), "installer must include broker probe")
+    require(r"passed=78\|failed=0" in read("tools/Collect-Native-Evidence.ps1"), "native evidence collector must enforce 78/0 validation")
     require(
         "source research preview" in readme.lower(),
         "README must retain research-preview status language",

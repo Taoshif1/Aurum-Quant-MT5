@@ -27,10 +27,10 @@ The source bundle includes:
 - `Experts/AurumQuantEA.mq5`
 - `Include/AurumQuant/**/*.mqh`
 - all shipped `Presets/*.set`
-- `Tests/AurumQuantValidation.mq5`
+- `Tests/AurumQuantValidation.mq5` and `Tests/AurumQuantBrokerProbe.mq5`
 - user-facing `docs/*.md`
 - `README.md`
-- the PowerShell install and official-MetaEditor compile helpers
+- the PowerShell install, official-MetaEditor compile, and native-evidence collection helpers
 - preset validation plus source-package build/verification Python tools
 
 It deliberately excludes Git metadata, GitHub workflow files, portable test shims, `AGENTS.md`, local build output and compiled `.ex5` files.

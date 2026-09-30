@@ -27,12 +27,13 @@ OBSERVE and a separate submission lock are enforced inside entry and position-mu
 .\tools\Compile-MQL5.ps1 -TerminalData 'YOUR_MT5_DATA_FOLDER'
 ```
 
-The installer backs up existing project files and copies source, includes, the validation script and presets. The compile helper builds repository targets. Compile the installed `AurumQuantEA.mq5` and `AurumQuantValidation.mq5` in MetaEditor as well before using the installed copies. Both require zero errors and warnings.
+The installer backs up existing project files and copies source, includes, the validation script, broker probe, and presets. The compile helper builds the EA plus both native scripts. All three compile logs must report zero errors and warnings.
 
 3. Run **Scripts → AurumQuantValidation**. Require `AURUM|SELF_TEST|RESULT|passed=78|failed=0`.
 4. Attach the EA to the exact broker symbol chart, such as `XAUUSDm`, and load `Presets/AurumQuant/XAUUSD-Research.set`. A blank `TradeSymbol` uses that chart's symbol.
 5. Calibrate `MaxSpreadPoints` against the exact broker symbol. Preset spread values are placeholders. Generic intentionally starts with zero and blocks until configured.
 6. Start in OBSERVE and check diagnostics. Follow [QUICKSTART](docs/QUICKSTART.md) before demo execution.
+7. Run **Scripts → AurumQuantBrokerProbe** with the exact broker symbols you plan to validate. Then use `tools/Collect-Native-Evidence.ps1` to collect clean compiler logs, the 78/0 validation journal, the probe CSV, and optional tester artifacts into one checksummed evidence folder.
 
 ## Presets
 

@@ -48,5 +48,6 @@ Future simulations should randomize trade order, probabilistically skip trades, 
 4. Select a documented date range and confirm the H1 warm-up history exists.
 5. Run Visual mode to verify dashboard, new-bar logs, filters, and no trades.
 6. Export the tester report and journal alongside the test metadata.
+7. Run `AurumQuantBrokerProbe` for the exact broker symbols used, then call `tools/Collect-Native-Evidence.ps1` with the exported report/journal so hashes and source commit are captured together.
 
 Economic Calendar functions use broker-server time and may be unavailable or behave differently in Strategy Tester/offline agents. An enabled unavailable calendar is a fail-closed condition; test runs must record whether calendar data was actually supplied.
