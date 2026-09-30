@@ -112,7 +112,7 @@ def main() -> None:
                 raise RuntimeError(f"manifest hash/size mismatch: {path}")
 
         packaged_ea = archive.read(root + "Experts/AurumQuantEA.mq5").decode("utf-8")
-        version_match = re.search(r'^#property\\s+version\\s+"([^"]+)"', packaged_ea, re.MULTILINE)
+        version_match = re.search(r'^#property\s+version\s+"([^"]+)"', packaged_ea, re.MULTILINE)
         if not version_match or version_match.group(1) != version:
             raise RuntimeError("manifest version differs from packaged EA")
 
