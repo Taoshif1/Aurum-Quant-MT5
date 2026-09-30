@@ -160,13 +160,16 @@ def main() -> None:
     require("python3 tools/release-audit.py" in workflow, "CI release audit gate missing")
     require("python3 tools/build-source-release.py" in workflow, "CI source build gate missing")
     require("python3 tools/check-source-release.py" in workflow, "CI source verification gate missing")
+    require("python3 tools/check-native-evidence.py --self-test" in workflow, "CI native-evidence verifier self-test missing")
     require("dist/" in gitignore.splitlines(), "generated dist/ must remain ignored")
+    require("evidence/" in gitignore.splitlines(), "generated evidence/ must remain ignored")
 
     for tool in (
         "tools/check-presets.py",
         "tools/Collect-Native-Evidence.ps1",
         "tools/build-source-release.py",
         "tools/check-source-release.py",
+        "tools/check-native-evidence.py",
         "tools/release-audit.py",
     ):
         require(
