@@ -17,6 +17,12 @@ public:
       datetime server=TimeTradeServer(),day=DayStart(server); if(server<=0||day<=0) { reason="server time unavailable"; return false; }
       if(day==m_day && m_start_time>0 && m_start_equity>0) { reason="OK"; return true; }
       m_day=day;m_key=Key(day);m_blocked=false;
+      if(MQLInfoInteger(MQL_TESTER))
+      {
+         m_start_equity=AccountInfoDouble(ACCOUNT_EQUITY);m_start_time=server;m_start_floating=OwnedFloating();
+         if(!MathIsValidNumber(m_start_equity) || m_start_equity<=0 || !MathIsValidNumber(m_start_floating)) {reason="invalid tester baseline";return false;}
+         reason="OK";return true;
+      }
       string time_key=m_key+".T",floating_key=m_key+".F";
       if(GlobalVariableCheck(m_key)&&GlobalVariableCheck(time_key)&&GlobalVariableCheck(floating_key)){m_start_equity=GlobalVariableGet(m_key);m_start_time=(datetime)GlobalVariableGet(time_key);m_start_floating=GlobalVariableGet(floating_key);}
       else
@@ -24,7 +30,7 @@ public:
          m_start_equity=AccountInfoDouble(ACCOUNT_EQUITY);m_start_time=server;m_start_floating=OwnedFloating();
          if(m_start_equity<=0 || !GlobalVariableSet(m_key,m_start_equity) || !GlobalVariableSet(time_key,(double)m_start_time) || !GlobalVariableSet(floating_key,m_start_floating)) { reason="cannot persist daily baseline"; return false; }
       }
-      if(m_start_equity<=0 || m_start_time<day || m_start_time>server) { reason="invalid persisted daily baseline"; return false; }
+      if(!MathIsValidNumber(m_start_equity) || !MathIsValidNumber(m_start_floating) || m_start_equity<=0 || m_start_time<day || m_start_time>server) { reason="invalid persisted daily baseline"; return false; }
       reason="OK"; return true;
    }
    bool CurrentOwnedPnL(double &pnl,string &reason)
@@ -42,7 +48,7 @@ public:
    }
    static bool Evaluate(double baseline,double owned_pnl,double limit_percent,double &loss_percent)
    {
-      loss_percent=0; if(baseline<=0||limit_percent<=0||!MathIsValidNumber(baseline)||!MathIsValidNumber(owned_pnl)) { loss_percent=100; return true; }
+      loss_percent=0; if(baseline<=0||limit_percent<=0||!MathIsValidNumber(baseline)||!MathIsValidNumber(owned_pnl)||!MathIsValidNumber(limit_percent)) { loss_percent=100; return true; }
       loss_percent=MathMax(0.0,-owned_pnl/baseline*100.0); return loss_percent+1e-10>=limit_percent;
    }
    static bool IsNewBrokerDay(datetime stored_day,datetime current_day) { return stored_day<=0 || current_day<=0 || stored_day!=current_day; }

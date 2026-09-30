@@ -2,8 +2,10 @@
 #define AURUM_VALIDATION_SUITE_MQH
 #include <AurumQuant/Risk/RiskManager.mqh>
 #include <AurumQuant/Risk/DailyGuard.mqh>
+#include <AurumQuant/Risk/PortfolioBudget.mqh>
 #include <AurumQuant/Trading/TradeManager.mqh>
 #include <AurumQuant/Trading/PositionManager.mqh>
+#include <AurumQuant/Research/StrategyValidation.mqh>
 class AQValidationSuite
 {
 private:
@@ -28,6 +30,13 @@ public:
       unusual.tick_size=0.1;Check(AQRiskManager::ValidateStops(unusual,AQ_BUY,99.0,102.0,false,reason),"valid BUY stops",passed,failed);Check(!AQRiskManager::ValidateStops(unusual,AQ_BUY,100.1,102.0,false,reason),"BUY stop wrong side blocked",passed,failed);Check(!AQRiskManager::ValidateStops(unusual,AQ_SELL,100.2,99.0,true,reason),"freeze distance modification blocked",passed,failed);
       double loss=0;Check(!AQDailyGuard::Evaluate(10000,500,3,loss)&&Near(loss,0),"daily profit",passed,failed);Check(!AQDailyGuard::Evaluate(10000,-100,3,loss)&&Near(loss,1),"daily small loss",passed,failed);Check(AQDailyGuard::Evaluate(10000,-300,3,loss)&&Near(loss,3),"daily exact limit",passed,failed);Check(AQDailyGuard::Evaluate(10000,-301,3,loss),"daily exceeded limit",passed,failed);
       Check(AQDailyGuard::IsNewBrokerDay(D'2026.08.29 00:00',D'2026.08.30 00:00'),"new broker day detected",passed,failed);Check(!AQDailyGuard::IsNewBrokerDay(D'2026.08.30 00:00',D'2026.08.30 00:00'),"same-day restart preserves baseline key",passed,failed);
+      double portfolio_percent=0;
+      Check(AQPortfolioBudget::MagicInGroup(26093001,26093000,100),"portfolio magic inside group",passed,failed);
+      Check(!AQPortfolioBudget::MagicInGroup(26093100,26093000,100),"portfolio magic outside group",passed,failed);
+      Check(AQPortfolioBudget::Pass(10000,1.0,40,20,1,3,portfolio_percent,reason)&&Near(portfolio_percent,0.6),"portfolio candidate within risk budget",passed,failed);
+      Check(AQPortfolioBudget::Pass(10000,1.0,75,25,2,3,portfolio_percent,reason)&&Near(portfolio_percent,1.0),"portfolio exact risk cap allowed",passed,failed);
+      Check(!AQPortfolioBudget::Pass(10000,1.0,90,20,2,3,portfolio_percent,reason),"portfolio risk excess blocked",passed,failed);
+      Check(!AQPortfolioBudget::Pass(10000,1.0,20,10,3,3,portfolio_percent,reason),"portfolio position cap blocked",passed,failed);
       AQTradeManager manager;manager.Init(MODE_OBSERVE,true,123,"SYNTH");Check(!manager.ExecutionAllowed(reason),"OBSERVE blocks even if master switch requested",passed,failed);manager.Init(MODE_LIVE,false,123,"SYNTH");Check(!manager.ExecutionAllowed(reason),"LIVE requires master lock",passed,failed);
       AQSymbolSpec quarter=Synthetic(0.25,2.5,0.25,2.0,0.25);
       Check(Near(AQSymbolProfile::NormalizeVolumeDown(quarter,0.79),0.75),"quarter lots retain decimal precision",passed,failed);
@@ -44,6 +53,7 @@ public:
       AQPositionManager positions;Check(!positions.ExecutionAllowed(reason),"position manager starts locked",passed,failed);
       positions.Init(123,"SYNTH",MODE_OBSERVE,true);Check(!positions.ExecutionAllowed(reason),"OBSERVE position mutations blocked",passed,failed);
       positions.Init(123,"SYNTH",MODE_LIVE,false);Check(!positions.ExecutionAllowed(reason),"position mutations require master lock",passed,failed);
+      int strategy_passed=0,strategy_failed=0;AQStrategyValidation::Run(strategy_passed,strategy_failed);passed+=strategy_passed;failed+=strategy_failed;
       PrintFormat("AURUM|SELF_TEST|RESULT|passed=%d|failed=%d",passed,failed);return failed==0;
    }
 };

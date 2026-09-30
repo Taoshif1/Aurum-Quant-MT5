@@ -31,3 +31,7 @@ Gold uses the same EA and modules. Its preset demonstrates different point-sprea
 Future Forex, index, Gold, and crypto presets should configure policy without copying core code.
 
 Session windows use `TimeTradeServer()`, support same-hour/all-day and overnight wraparound windows, and do not perform automatic daylight-saving conversion. Presets must be reviewed when the broker changes server offset or DST policy. The BTC preset intentionally has no Forex-session assumption.
+
+## v1.2 preset additions
+
+Silver has its own `PROFILE_SILVER=5` label without changing the existing enum values. XAGUSD, ETHUSD, EURUSD and Generic presets join BTCUSD and XAUUSD. All six contain every input, use distinct magic numbers, and enable candidate research under OBSERVE with submission off. Profile names do not assert broker compatibility; symbol validation and account-currency calculations remain required. See QUICKSTART for suffixes, session time and placeholder spread limits.

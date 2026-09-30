@@ -1,0 +1,21 @@
+name: Portable logic regressions (not MT5 compilation)
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  portable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate patch whitespace
+        run: git diff --check HEAD^1 HEAD
+      - name: Compile production-header tests
+        run: g++ -std=c++17 -Wall -Wextra -Werror -I Tests/portable -I Include Tests/portable/regression.cpp -o /tmp/aurum-regression
+      - name: Run deterministic regressions
+        run: /tmp/aurum-regression
+      - name: Verify preset safety and inputs
+        run: python3 tools/check-presets.py

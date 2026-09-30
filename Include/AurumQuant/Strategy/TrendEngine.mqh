@@ -12,7 +12,8 @@ public:
       m_symbol=symbol; m_tf=tf; m_fast=fast_period; m_slow=slow_period;
       if(fast_period<=0 || slow_period<=fast_period) return false;
       m_fast_handle=iMA(symbol,tf,fast_period,0,MODE_EMA,PRICE_CLOSE); m_slow_handle=iMA(symbol,tf,slow_period,0,MODE_EMA,PRICE_CLOSE);
-      return m_fast_handle!=INVALID_HANDLE && m_slow_handle!=INVALID_HANDLE;
+      if(m_fast_handle==INVALID_HANDLE || m_slow_handle==INVALID_HANDLE){Shutdown();return false;}
+      return true;
    }
    ENUM_TREND_STATE Evaluate()
    {
@@ -21,6 +22,6 @@ public:
       if(!MathIsValidNumber(f[0]) || !MathIsValidNumber(s[0]) || f[0]<=0 || s[0]<=0) return TREND_DATA_NOT_READY;
       if(f[0]>s[0]) return TREND_BULLISH; if(f[0]<s[0]) return TREND_BEARISH; return TREND_NEUTRAL;
    }
-   void Shutdown() { if(m_fast_handle!=INVALID_HANDLE) IndicatorRelease(m_fast_handle); if(m_slow_handle!=INVALID_HANDLE) IndicatorRelease(m_slow_handle); }
+   void Shutdown() { if(m_fast_handle!=INVALID_HANDLE) IndicatorRelease(m_fast_handle); if(m_slow_handle!=INVALID_HANDLE) IndicatorRelease(m_slow_handle);m_fast_handle=INVALID_HANDLE;m_slow_handle=INVALID_HANDLE; }
 };
 #endif
