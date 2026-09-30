@@ -24,5 +24,5 @@ for path in sorted((root/'Presets').glob('*.set')):
     if portfolio_group is None: portfolio_group = group
     assert group == portfolio_group, f'{path.name}: inconsistent portfolio group'
     assert float(values['MaxPortfolioRiskPercent']) >= float(values['RiskPercent']) > 0, f'{path.name}: invalid portfolio risk cap'
-    assert int(values['MaxPortfolioPositions']) >= 1, f'{path.name}: invalid portfolio position cap'
+    assert int(values['MaxPortfolioExposures']) >= 1, f'{path.name}: invalid portfolio exposure cap'
     print(f'PASS: {path.name} ({len(values)} inputs, OBSERVE, submission OFF, portfolio group {base}+{span})')
