@@ -123,7 +123,7 @@ void LoadSettings()
 int OnInit()
 {
    LoadSettings();g_log.Init(g_cfg.symbol,g_cfg.magic);g_diagnostic.Reset();
-   string license_init_reason;g_license.Init(RequireCommercialLicense,LicenseEndpoint,LicenseKey,LicenseTimeoutMs,LicenseRecheckMinutes,license_init_reason);
+   string license_init_reason;g_license.Init(RequireCommercialLicense,LicenseEndpoint,LicenseKey,LicenseTimeoutMs,LicenseRecheckMinutes,"1.250",license_init_reason);
    g_license_status=g_license.Status();g_last_license_status=g_license_status;
    if(RequireCommercialLicense)
    {

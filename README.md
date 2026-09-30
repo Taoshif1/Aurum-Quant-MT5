@@ -1,4 +1,4 @@
-# Aurum Quant MT5 · 1.24 research preview
+# Aurum Quant MT5 · 1.25 research preview
 
 An MQL5 Expert Advisor for broker-provided gold, silver, Bitcoin, Ethereum, forex and other compatible instruments. One chart runs one symbol. Contract sizes, tick values and lot constraints come from the broker.
 
@@ -13,7 +13,7 @@ An MQL5 Expert Advisor for broker-provided gold, silver, Bitcoin, Ethereum, fore
 - Duplicate request identity persisted across terminal restarts; no per-tick retries after a rejected candidate.
 - Optional break-even management by original R or fixed distance, plus fixed-distance, closed-ATR, or original-R trailing. Stop changes only tighten owned positions and still pass the same execution and broker stop/freeze gates.
 - On-chart status and pause/resume button for new entries. Entry pause does not disable already-enabled position protection.
-- Six OBSERVE presets, source installer with backups, compile helper, portable regression CI, and a deterministic checksummed source-release bundle.
+- Six OBSERVE presets, source installer with backups, compile helper, portable regression CI, deterministic checksummed release tooling, and a disabled-by-default commercial license client boundary.
 
 OBSERVE and a separate submission lock are enforced inside entry and position-mutation boundaries. Presets enable research signals while keeping `OperatingMode=0` and `EnableOrderSubmission=false`. No exchange API, martingale, grid averaging or optimization is implemented. No profitability claim is made.
 
@@ -47,7 +47,7 @@ The installer backs up existing project files and copies source, includes, the v
 | EURUSD-Research.set | EUR/USD | Forex | Enabled / enabled |
 | Generic-Research.set | Other broker instrument | Generic | Disabled / disabled |
 
-All presets use 0.25% nominal risk per proposed trade, a three-entry daily cap and a four-bar cooldown. These are unvalidated research defaults, not recommendations. The presets reserve magic range 26093000–26093099 and share a 1.0% maximum stop-risk budget with a three-exposure portfolio cap. The daily guard remains per symbol/magic.
+All presets use 0.25% nominal risk per proposed trade, a three-entry daily cap and a four-bar cooldown. Commercial licensing is disabled and contains no endpoint or key in every shipped research preset. These are unvalidated research defaults, not recommendations. The presets reserve magic range 26093000–26093099 and share a 1.0% maximum stop-risk budget with a three-exposure portfolio cap. The daily guard remains per symbol/magic.
 
 ## Research source bundle
 
@@ -84,6 +84,12 @@ python3 tools/check-support-bundle.py support/support-YYYYMMDD-HHMMSS
 ```
 
 See [support diagnostics and privacy](docs/SUPPORT.md).
+
+## Commercial license boundary
+
+v1.25 adds a disabled-by-default license client for future paid builds. When enabled, it requires an HTTPS endpoint and sends the entered license key plus a SHA-256 account fingerprint rather than the raw MT5 login. A missing, invalid, expired, or unavailable activation blocks **new DEMO/LIVE entries only**. OBSERVE remains usable, and break-even/trailing protection for already-open positions is not license-gated.
+
+MT5 requires customers to allow-list the license URL for `WebRequest`; WebRequest is unavailable in Strategy Tester. The backend service itself is not deployed yet, so `license_enforcement_complete` remains false. See [licensing architecture](docs/LICENSING.md).
 
 ## Portable regression checks
 

@@ -9,6 +9,7 @@
 #include <AurumQuant/Trading/OrderPlan.mqh>
 #include <AurumQuant/Risk/PortfolioBudget.mqh>
 #include <AurumQuant/Risk/PortfolioLockPolicy.mqh>
+#include <AurumQuant/Commercial/LicensePolicy.mqh>
 int main(){
  AQSymbolSpec s{};s.valid=true;s.bid=100;s.ask=100.1;s.point=0.1;s.digits=2;
  s.tick_size=0.25;s.tick_value_loss=2.5;s.volume_min=0.25;s.volume_max=2;s.volume_step=0.25;
@@ -65,6 +66,16 @@ int main(){
  assert(AQPortfolioLockPolicy::CanAcquire(1000,1000));
  assert(!AQPortfolioLockPolicy::CanAcquire(1000,1001));
  assert(!AQPortfolioLockPolicy::CanAcquire(1000,-1));
+ // Commercial activation is a new-entry gate only. OBSERVE remains diagnostic.
+ assert(AQLicensePolicy::AllowsNewEntries(false,MODE_DEMO,LICENSE_UNCHECKED,1000,0,reason));
+ assert(AQLicensePolicy::AllowsNewEntries(true,MODE_OBSERVE,LICENSE_INVALID,1000,0,reason));
+ assert(!AQLicensePolicy::AllowsNewEntries(true,MODE_DEMO,LICENSE_UNCHECKED,1000,0,reason));
+ assert(AQLicensePolicy::AllowsNewEntries(true,MODE_DEMO,LICENSE_VALID,1000,2000,reason));
+ assert(AQLicensePolicy::AllowsNewEntries(true,MODE_LIVE,LICENSE_VALID,1000,0,reason));
+ assert(!AQLicensePolicy::AllowsNewEntries(true,MODE_LIVE,LICENSE_VALID,2000,2000,reason));
+ assert(!AQLicensePolicy::AllowsNewEntries(true,MODE_DEMO,LICENSE_EXPIRED,1000,0,reason));
+ assert(!AQLicensePolicy::AllowsNewEntries(true,MODE_LIVE,LICENSE_INVALID,1000,0,reason));
+ assert(!AQLicensePolicy::AllowsNewEntries(true,MODE_DEMO,LICENSE_UNAVAILABLE,1000,0,reason));
  int policies=0;
  for(int mode:{0,1,2,99})for(bool armed:{false,true})for(long account:{ACCOUNT_TRADE_MODE_DEMO,ACCOUNT_TRADE_MODE_REAL,ACCOUNT_TRADE_MODE_CONTEST}){
   bool expected=armed && ((mode==1 && account==ACCOUNT_TRADE_MODE_DEMO)||(mode==2 && account==ACCOUNT_TRADE_MODE_REAL));
@@ -84,5 +95,5 @@ int main(){
  int management_passed=0,management_failed=0;assert(AQPositionManagementValidation::Run(management_passed,management_failed));
  std::cout<<"Strategy assertions: "<<strategy_passed<<" passed, "<<strategy_failed<<" failed\n";
  std::cout<<"Position management assertions: "<<management_passed<<" passed, "<<management_failed<<" failed\n";
- std::cout<<"PASS: "<<samples<<" volume budgets, "<<policies<<" execution policies, portfolio budgets, lock policy, position management, invalid numeric inputs, locked mutation paths\n";
+ std::cout<<"PASS: "<<samples<<" volume budgets, "<<policies<<" execution policies, portfolio budgets, lock policy, license policy, position management, invalid numeric inputs, locked mutation paths\n";
 }

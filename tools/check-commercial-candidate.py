@@ -44,6 +44,7 @@ def verify(root_dir: Path) -> None:
     require(manifest.get("native_evidence_verified") is True, "native evidence not verified")
     require(manifest.get("compiled_ex5_included") is True, "EX5 flag missing")
     require(manifest.get("commercial_ready") is False, "candidate must not claim commercial-ready")
+    require(manifest.get("license_client_boundary_complete") is True, "candidate must declare license client boundary")
     require(manifest.get("profitability_claim") is False, "candidate must not claim profitability")
     require(manifest.get("execution_defaults") == {"operating_mode":"OBSERVE","order_submission":False}, "unsafe candidate defaults")
     for key in ("performance_validation_complete","license_enforcement_complete","code_signing_complete"):
@@ -93,6 +94,7 @@ def verify(root_dir: Path) -> None:
                 values[key]=value
             require(values.get("OperatingMode") == "0", f"unsafe operating mode in {preset}")
             require(values.get("EnableOrderSubmission") == "false", f"submission armed in {preset}")
+            require(values.get("RequireCommercialLicense") == "false", f"license enforcement unexpectedly armed in {preset}")
 
     print(f"PASS: commercial candidate verified {zip_path.name} files={len(listed)}")
 
@@ -109,7 +111,7 @@ def self_test() -> None:
             "Install-AurumQuant.ps1": b"installer",
         }
         for name in ("BTCUSD","ETHUSD","EURUSD","Generic","XAGUSD","XAUUSD"):
-            files[f"Presets/{name}-Research.set"] = b"OperatingMode=0\nEnableOrderSubmission=false\n"
+            files[f"Presets/{name}-Research.set"] = b"OperatingMode=0\nEnableOrderSubmission=false\nRequireCommercialLicense=false\n"
         manifest = {
             "schema_version":1,
             "package_kind":"commercial-release-candidate",
@@ -121,6 +123,7 @@ def self_test() -> None:
             "compiled_ex5_included":True,
             "execution_defaults":{"operating_mode":"OBSERVE","order_submission":False},
             "performance_validation_complete":False,
+            "license_client_boundary_complete":True,
             "license_enforcement_complete":False,
             "code_signing_complete":False,
             "commercial_ready":False,
