@@ -31,6 +31,17 @@ jobs:
         run: python3 tools/check-commercial-candidate.py --self-test
       - name: Self-test privacy-safe support bundle verifier
         run: python3 tools/check-support-bundle.py --self-test
+      - name: Check license-service schema and security contract
+        run: python3 tools/check-license-service.py
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+      - name: Type-check Supabase license Edge Function
+        working-directory: supabase/functions/aurum-license
+        run: deno task check
+      - name: Test license Edge Function contract
+        working-directory: supabase/functions/aurum-license
+        run: deno task test
       - name: Build deterministic source release
         run: python3 tools/build-source-release.py
       - name: Verify source release

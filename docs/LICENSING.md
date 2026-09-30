@@ -1,6 +1,6 @@
 # Commercial licensing architecture
 
-Aurum Quant v1.25 contains a client-side licensing boundary for future paid builds. The feature is intentionally disabled in the research presets and the remote licensing service is not yet deployed.
+Aurum Quant v1.25 contains a client-side licensing boundary for future paid builds. The feature is intentionally disabled in the research presets. The matching Supabase license-service source is implemented under `commercial/license-service/` and `supabase/functions/aurum-license/`, but no dedicated Aurum Supabase project has been provisioned/deployed yet.
 
 ## Client inputs
 
@@ -47,6 +47,6 @@ AURUM_LICENSE|status=EXPIRED
 
 ## Still required
 
-Client code is only one half of licensing. Commercial enforcement remains incomplete until there is a deployed service with a license database, issuance/revocation administration, rate limiting, audit logging, privacy/retention policy, secret management, availability monitoring, and native MT5 activation tests against the production endpoint.
+The repository now includes the database schema, atomic license-validation RPC, Edge Function, rolling request limit, hashed-key issuance helper, audit-event data, and CI contract/security checks. Commercial enforcement remains incomplete until those components are deployed to a dedicated project with an issuance/revocation administration workflow, privacy/retention policy, secret rotation/monitoring, availability monitoring, and native MT5 activation tests against the production endpoint.
 
 Do not set `license_enforcement_complete=true` in a release manifest until those server-side and native gates are complete.

@@ -45,6 +45,7 @@ def verify(root_dir: Path) -> None:
     require(manifest.get("compiled_ex5_included") is True, "EX5 flag missing")
     require(manifest.get("commercial_ready") is False, "candidate must not claim commercial-ready")
     require(manifest.get("license_client_boundary_complete") is True, "candidate must declare license client boundary")
+    require(manifest.get("license_service_source_complete") is True, "candidate must declare license service source state")
     require(manifest.get("profitability_claim") is False, "candidate must not claim profitability")
     require(manifest.get("execution_defaults") == {"operating_mode":"OBSERVE","order_submission":False}, "unsafe candidate defaults")
     for key in ("performance_validation_complete","license_enforcement_complete","code_signing_complete"):
@@ -124,6 +125,7 @@ def self_test() -> None:
             "execution_defaults":{"operating_mode":"OBSERVE","order_submission":False},
             "performance_validation_complete":False,
             "license_client_boundary_complete":True,
+            "license_service_source_complete":True,
             "license_enforcement_complete":False,
             "code_signing_complete":False,
             "commercial_ready":False,

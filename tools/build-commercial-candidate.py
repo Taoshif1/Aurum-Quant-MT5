@@ -128,6 +128,7 @@ def build(evidence: Path, output: Path = DIST) -> tuple[Path, Path, Path]:
         "execution_defaults": {"operating_mode": "OBSERVE", "order_submission": False},
         "performance_validation_complete": False,
         "license_client_boundary_complete": True,
+        "license_service_source_complete": True,
         "license_enforcement_complete": False,
         "code_signing_complete": False,
         "commercial_ready": False,

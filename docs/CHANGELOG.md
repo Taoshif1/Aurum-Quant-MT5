@@ -6,7 +6,8 @@
 - Require HTTPS licensing configuration and use a SHA-256 account fingerprint instead of transmitting the raw MT5 login.
 - Keep OBSERVE usable without activation; invalid/unavailable licensing blocks new DEMO/LIVE entries but never disables existing-position break-even/trailing protection.
 - Add nine portable license-policy regressions and five locked licensing inputs to every shipped preset.
-- Keep the remote license service, administration, deployment, and official MetaEditor/WebRequest validation explicitly pending.
+- Add the Supabase license-service source: hashed-key schema, RLS/client-role lockdown, atomic activation validation, activation limits, rolling request limits, Edge Function, key generator, and Deno CI tests.
+- Keep dedicated-project deployment, administration workflow, production monitoring, and official MetaEditor/WebRequest validation explicitly pending.
 
 ## 1.24 research preview — 2026-09-30
 
