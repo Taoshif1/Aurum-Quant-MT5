@@ -20,6 +20,24 @@ private:
       {reason="closed ATR unavailable for trailing";return false;}
       atr=values[0];reason="OK";return true;
    }
+
+   bool OriginalRisk(ulong ticket,ENUM_AQ_DIRECTION direction,double entry,double current_sl,double &risk,string &reason)
+   {
+      risk=0;
+      double raw=(direction==AQ_BUY ? entry-current_sl : current_sl-entry);
+      if(!MathIsValidNumber(raw) || raw<=0){reason="original risk cannot be derived from current stop";return false;}
+      if(MQLInfoInteger(MQL_TESTER)){risk=raw;reason="OK";return true;}
+      string key=StringFormat("AQR.%I64d.%I64u",AccountInfoInteger(ACCOUNT_LOGIN),ticket);
+      if(key=="" || StringLen(key)>63){reason="original-risk key invalid";return false;}
+      if(GlobalVariableCheck(key))
+      {
+         if(!GlobalVariableGet(key,risk) || !MathIsValidNumber(risk) || risk<=0)
+         {reason="persisted original risk invalid";return false;}
+         reason="OK";return true;
+      }
+      if(GlobalVariableSet(key,raw)==0){reason="cannot persist original position risk";return false;}
+      risk=raw;reason="OK";return true;
+   }
 public:
    AQPositionManager(void):m_symbol(""),m_magic(0),m_mode(MODE_OBSERVE),m_armed(false),
       m_management_tf(PERIOD_CURRENT),m_atr_period(14),m_atr_handle(INVALID_HANDLE) {}
@@ -101,8 +119,11 @@ public:
          double current_sl=PositionGetDouble(POSITION_SL);
          double tp=PositionGetDouble(POSITION_TP);
          double market=(direction==AQ_BUY?spec.bid:spec.ask);
+         double original_risk=0;
+         bool risk_side=(direction==AQ_BUY ? current_sl>0 && current_sl<entry : current_sl>entry);
+         if(risk_side && !OriginalRisk(ticket,direction,entry,current_sl,original_risk,reason))return false;
          AQStopProposal proposal;
-         if(!AQStopManagementPolicy::Build(direction,entry,market,current_sl,spec.point,spec.tick_size,
+         if(!AQStopManagementPolicy::Build(direction,entry,market,current_sl,original_risk,spec.point,spec.tick_size,
               break_even_enabled,break_even_method,break_even_trigger_r,break_even_distance_points,
               trailing_enabled,trailing_method,trailing_value,atr,proposal))
          {reason=proposal.reason;return false;}
