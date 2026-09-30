@@ -14,6 +14,7 @@
 - Add a strict Strategy Tester journal parser that converts Aurum tester metrics to JSON and rejects non-finite or inconsistent records.
 - Bind the exact compiled EX5 outputs into native evidence and require them during independent verification.
 - Add a deterministic compiled commercial-candidate builder/verifier and compiled-package installer; candidate manifests remain explicitly not commercial-ready until performance, licensing and signing gates are completed.
+- Add a privacy-safe customer support bundle collector/verifier that excludes raw account IDs and local paths, retains only Aurum log lines, redacts email/secret-like values, and has CI rejection tests.
 
 ## 1.23 research preview — 2026-09-30
 

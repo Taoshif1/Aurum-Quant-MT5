@@ -73,6 +73,18 @@ python3 tools/check-commercial-candidate.py
 
 The candidate ZIP contains compiled EX5 files, six locked presets, operator docs, and a compiled-package installer. Its manifest intentionally keeps `commercial_ready=false`, `performance_validation_complete=false`, `license_enforcement_complete=false`, and `code_signing_complete=false` until those separate gates exist. See [commercial release process](docs/COMMERCIAL-RELEASE.md).
 
+## Privacy-safe support bundle
+
+For customer troubleshooting, `tools/Collect-Support-Bundle.ps1` creates a local ZIP containing a sanitized broker probe, only Aurum-specific log lines, and an optional redacted preset. Raw MT5 account login IDs, local terminal paths, emails in retained logs, and secret-like preset values are excluded or redacted by default. Nothing is uploaded automatically.
+
+Verify before sharing:
+
+```sh
+python3 tools/check-support-bundle.py support/support-YYYYMMDD-HHMMSS
+```
+
+See [support diagnostics and privacy](docs/SUPPORT.md).
+
 ## Portable regression checks
 
 ```sh
