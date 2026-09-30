@@ -3,6 +3,7 @@
 #include <AurumQuant/Risk/RiskManager.mqh>
 #include <AurumQuant/Risk/DailyGuard.mqh>
 #include <AurumQuant/Risk/PortfolioBudget.mqh>
+#include <AurumQuant/Risk/PortfolioLockPolicy.mqh>
 #include <AurumQuant/Trading/TradeManager.mqh>
 #include <AurumQuant/Trading/PositionManager.mqh>
 #include <AurumQuant/Research/StrategyValidation.mqh>
@@ -37,6 +38,10 @@ public:
       Check(AQPortfolioBudget::Pass(10000,1.0,75,25,2,3,portfolio_percent,reason)&&Near(portfolio_percent,1.0),"portfolio exact risk cap allowed",passed,failed);
       Check(!AQPortfolioBudget::Pass(10000,1.0,90,20,2,3,portfolio_percent,reason),"portfolio risk excess blocked",passed,failed);
       Check(!AQPortfolioBudget::Pass(10000,1.0,20,10,3,3,portfolio_percent,reason),"portfolio position cap blocked",passed,failed);
+      Check(AQPortfolioLockPolicy::CanAcquire(1000,0),"portfolio lock free",passed,failed);
+      Check(AQPortfolioLockPolicy::CanAcquire(1000,1000),"portfolio lock exact expiry reclaimable",passed,failed);
+      Check(!AQPortfolioLockPolicy::CanAcquire(1000,1001),"portfolio lock future expiry blocks",passed,failed);
+      Check(!AQPortfolioLockPolicy::CanAcquire(1000,-1),"portfolio lock invalid state blocked",passed,failed);
       AQTradeManager manager;manager.Init(MODE_OBSERVE,true,123,"SYNTH");Check(!manager.ExecutionAllowed(reason),"OBSERVE blocks even if master switch requested",passed,failed);manager.Init(MODE_LIVE,false,123,"SYNTH");Check(!manager.ExecutionAllowed(reason),"LIVE requires master lock",passed,failed);
       AQSymbolSpec quarter=Synthetic(0.25,2.5,0.25,2.0,0.25);
       Check(Near(AQSymbolProfile::NormalizeVolumeDown(quarter,0.79),0.75),"quarter lots retain decimal precision",passed,failed);
