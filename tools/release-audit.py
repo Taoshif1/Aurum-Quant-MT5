@@ -174,7 +174,7 @@ def main() -> None:
             f"source package allowlist missing release tool: {tool}",
         )
 
-    require("Tests/AurumQuantBrokerProbe.mq5" in read("tools/Compile-MQL5.ps1"), "compile helper must include broker probe")
+    require("Tests\\\\AurumQuantBrokerProbe.mq5" in read("tools/Compile-MQL5.ps1"), "compile helper must include broker probe")
     require("Tests\\AurumQuantBrokerProbe.mq5" in read("tools/Install-MQL5.ps1"), "installer must include broker probe")
     require("passed=78\\|failed=0" in read("tools/Collect-Native-Evidence.ps1"), "native evidence collector must enforce 78/0 validation")
     require(
