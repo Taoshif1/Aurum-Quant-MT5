@@ -26,9 +26,11 @@ Positions are counted only when both symbol and magic number match. Manual and o
 
 Deterministic cases are in `Tests/AurumQuantValidation.mq5`: equity/risk/SL variations, invalid and zero economics, below-minimum and above-maximum volume, unusual steps, price alignment, directional/freeze stops, profit/small loss/exact/exceeded daily loss, new day, same-day restart identity, OBSERVE, and LIVE-with-lock-off.
 
-Break-even and trailing are separate, default-off features. Future break-even triggers may use R or distance; trailing may use fixed, ATR, swing, or R methods. If both are later enabled, the approved precedence must only tighten risk, never loosen a stop. Spread, commission, slippage, and minimum stop/freeze distance can make nominal break-even economically negative.
+Break-even and trailing are separate, default-off features. Break-even supports two triggers: original-risk multiples (BE_BY_R) and favorable distance in broker points (BE_BY_DISTANCE). Before the first automated stop change on an owned position, the manager persists its original entry-to-SL distance in a terminal Global Variable keyed by account and position ticket. R-based break-even uses that persisted distance after later stop tightening or terminal/EA restarts instead of incorrectly treating the current SL as the original risk.
 
-All position modification and close requests use the same execution policy as entries. The position manager starts in OBSERVE with its master lock off, including when initialized through its legacy two-argument interface. Account type is checked at every mutation. These checks are independent of future break-even or trailing feature switches.
+Trailing v1 supports fixed broker-point distance and a multiple of the last closed EntryTimeframe ATR(ATRPeriod). Swing and R-based trailing remain blocked. If break-even and trailing are both enabled, the policy chooses only the more protective stop and never loosens the current SL. Every proposed price is normalized to broker tick size and then revalidated against current Bid/Ask plus stop/freeze levels before modification. Spread, commission, slippage and gaps can still make nominal break-even economically negative.
+
+Position protection is independent of entry filters after initialization: session/news/daily-entry blocks do not intentionally disable stop tightening on an already owned position. It still requires fresh symbol data and the same execution policy as entries, so OBSERVE, an unarmed master switch, or the wrong account type performs no mutation. Only positions matching both configured symbol and magic are touched.
 
 Tester baselines remain in memory to avoid contamination between passes. The daily guard remains per symbol/magic.
 
