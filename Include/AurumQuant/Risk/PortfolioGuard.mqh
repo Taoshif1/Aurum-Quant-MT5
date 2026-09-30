@@ -18,9 +18,11 @@ private:
    }
    static bool PendingDirection(long kind,ENUM_ORDER_TYPE &type)
    {
-      if(kind==ORDER_TYPE_BUY || kind==ORDER_TYPE_BUY_LIMIT || kind==ORDER_TYPE_BUY_STOP || kind==ORDER_TYPE_BUY_STOP_LIMIT)
+      // Stop-limit orders are rejected fail-closed because ORDER_PRICE_OPEN and the eventual
+      // limit fill price are not equivalent risk anchors.
+      if(kind==ORDER_TYPE_BUY || kind==ORDER_TYPE_BUY_LIMIT || kind==ORDER_TYPE_BUY_STOP)
       {type=ORDER_TYPE_BUY;return true;}
-      if(kind==ORDER_TYPE_SELL || kind==ORDER_TYPE_SELL_LIMIT || kind==ORDER_TYPE_SELL_STOP || kind==ORDER_TYPE_SELL_STOP_LIMIT)
+      if(kind==ORDER_TYPE_SELL || kind==ORDER_TYPE_SELL_LIMIT || kind==ORDER_TYPE_SELL_STOP)
       {type=ORDER_TYPE_SELL;return true;}
       return false;
    }
