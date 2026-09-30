@@ -2,7 +2,11 @@
 from pathlib import Path
 import re
 root = Path(__file__).resolve().parents[1]
-inputs = set(re.findall(r'^input\s+\w+\s+(\w+)\s*=', (root/'Experts/AurumQuantEA.mq5').read_text(), re.M))
+ea_text = (root/'Experts/AurumQuantEA.mq5').read_text()
+inputs = set(re.findall(r'^input\s+\w+\s+(\w+)\s*=', ea_text, re.M))
+defaults = dict(re.findall(r'^input\s+\w+\s+(\w+)\s*=\s*([^;]+);', ea_text, re.M))
+default_magic = int(defaults['MagicNumber']); default_base = int(defaults['PortfolioMagicBase']); default_span = int(defaults['PortfolioMagicSpan'])
+assert default_base <= default_magic < default_base + default_span, 'EA default MagicNumber is outside its portfolio group'
 magics = set()
 portfolio_group = None
 for path in sorted((root/'Presets').glob('*.set')):

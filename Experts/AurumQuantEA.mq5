@@ -1,5 +1,5 @@
 #property copyright "Aurum Quant MT5 research project"
-#property version   "1.210"
+#property version   "1.220"
 #property strict
 #property description "Multi-asset breakout/retest research EA. Unvalidated strategy."
 
@@ -18,6 +18,8 @@
 #include <AurumQuant/Risk/PositionGuard.mqh>
 #include <AurumQuant/Risk/PortfolioBudget.mqh>
 #include <AurumQuant/Risk/PortfolioGuard.mqh>
+#include <AurumQuant/Risk/PortfolioLockPolicy.mqh>
+#include <AurumQuant/Risk/PortfolioExecutionLock.mqh>
 #include <AurumQuant/Risk/EntryLimits.mqh>
 #include <AurumQuant/Trading/OrderPlan.mqh>
 #include <AurumQuant/Filters/SpreadFilter.mqh>
@@ -34,7 +36,7 @@ input ENUM_AQ_MODE OperatingMode=MODE_OBSERVE;
 input bool EnableOrderSubmission=false;
 input string TradeSymbol="";
 input ENUM_ASSET_PROFILE AssetProfile=PROFILE_GENERIC;
-input ulong MagicNumber=26083001;
+input ulong MagicNumber=26093099;
 input bool RunDeterministicSelfTests=true;
 
 input group "Research timeframes and trend method"
@@ -93,11 +95,11 @@ input double TrailingValue=0.0;
 
 AQSettings g_cfg; AQSymbolSpec g_spec; AQLogger g_log; AQMarketData g_market; AQSelfDiagnostic g_diagnostic;
 AQTrendEngine g_trend_engine; AQStrategyEngine g_strategy; AQDailyGuard g_daily;
-AQTradeManager g_trader; AQPositionManager g_positions; AQDashboard g_dashboard;
+AQTradeManager g_trader; AQPositionManager g_positions; AQDashboard g_dashboard; AQPortfolioExecutionLock g_portfolio_lock;
 ENUM_TREND_STATE g_trend=TREND_DATA_NOT_READY; ENUM_SIGNAL_STATE g_signal=NO_SETUP; ENUM_NEWS_STATE g_news=NEWS_DISABLED;
 string g_critical="",g_spread_state="",g_session_state="",g_news_state="DISABLED",g_weekend_state="";
 double g_daily_loss=0; bool g_engine_ready=false,g_symbol_valid=false,g_trend_initialized=false,g_daily_initialized=false;
-double g_portfolio_risk=0,g_portfolio_used_percent=0;int g_portfolio_positions=0;
+double g_portfolio_risk=0,g_portfolio_used_percent=0;int g_portfolio_exposures=0;
 bool g_paused=false;
 string g_risk_status="No candidate evaluated",g_last_decision="";
 datetime g_evaluation_bar=0,g_evaluation_time=0,g_last_news_check=0;
@@ -132,6 +134,7 @@ int OnInit()
    g_symbol_valid=AQSymbolProfile::Load(g_cfg.symbol,g_spec);g_diagnostic.Check(g_symbol_valid,"SYMBOL DATA INVALID: "+g_spec.error);
    if(g_symbol_valid){g_trend_initialized=g_trend_engine.Init(g_cfg.symbol,g_cfg.trend_tf,FastEMAPeriod,SlowEMAPeriod);g_diagnostic.Check(g_trend_initialized,"indicator handles unavailable");}
    string daily_reason="symbol invalid";if(g_symbol_valid)g_daily_initialized=g_daily.Init(g_cfg.symbol,MagicNumber,DailyLossLimitPercent,daily_reason);g_diagnostic.Check(g_daily_initialized,"daily guard: "+daily_reason);
+   string portfolio_lock_reason;g_diagnostic.Check(g_portfolio_lock.Init(PortfolioMagicBase,PortfolioMagicSpan,MagicNumber,portfolio_lock_reason),"portfolio execution lock: "+portfolio_lock_reason);
    g_market.Init(g_cfg.symbol,g_cfg.entry_tf);g_trader.Init(OperatingMode,EnableOrderSubmission,MagicNumber,g_cfg.symbol);g_positions.Init(MagicNumber,g_cfg.symbol,OperatingMode,EnableOrderSubmission);
    g_trader.SetDeviation(MaxDeviationPoints);
    string execution_reason;bool execution_allowed=g_trader.ExecutionAllowed(execution_reason);g_diagnostic.Check(!(OperatingMode==MODE_OBSERVE && execution_allowed),"OBSERVE execution assertion failed");
@@ -140,7 +143,7 @@ int OnInit()
    return INIT_SUCCEEDED;
 }
 
-void OnDeinit(const int reason){g_strategy.Shutdown();g_trend_engine.Shutdown();g_dashboard.Clear();g_log.Event("DEINIT",IntegerToString(reason));}
+void OnDeinit(const int reason){g_portfolio_lock.Release();g_strategy.Shutdown();g_trend_engine.Shutdown();g_dashboard.Clear();g_log.Event("DEINIT",IntegerToString(reason));}
 
 void OnTick()
 {
@@ -150,7 +153,7 @@ void OnTick()
    datetime server=TimeTradeServer();if(g_last_news_check==0 || server-g_last_news_check>=60){g_news=AQNewsFilter::Evaluate(EnableNewsFilter,NewsMinutesBefore,NewsMinutesAfter,NewsCurrency,g_news_state);g_last_news_check=server;}
    bool news_ok=(g_news==NEWS_CLEAR || g_news==NEWS_DISABLED);string daily_reason="daily guard unavailable";bool daily_block=(!g_daily_initialized || g_daily.IsBlocked(g_daily_loss,daily_reason));
    string position_reason;bool position_ok=AQPositionGuard::CanOpen(g_cfg.symbol,MagicNumber,MaxOpenPositions,position_reason);
-   string portfolio_reason;bool portfolio_ok=AQPortfolioGuard::CurrentWithinLimits(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,g_portfolio_risk,g_portfolio_positions,g_portfolio_used_percent,portfolio_reason);
+   string portfolio_reason;bool portfolio_ok=AQPortfolioGuard::CurrentWithinLimits(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,portfolio_reason);
    int tick_age=INT_MAX;bool fresh=g_symbol_valid && g_market.Fresh(MaxTickAgeSeconds,tick_age);datetime closed_bar=0;bool evaluated=false;
    if(g_engine_ready && fresh && g_market.IsNewBar(closed_bar))
    {
@@ -162,24 +165,36 @@ void OnTick()
    if(g_paused)blocked="entries paused by user";
    string decision=(blocked!=""?"BLOCKED":(EnableResearchStrategy?"WAIT - breakout/retest v1":"OBSERVATION - strategy disabled"));
    bool candidate=evaluated && (g_signal==BUY_CANDIDATE || g_signal==SELL_CANDIDATE);
-   if(!candidate)g_risk_status=(portfolio_ok?StringFormat("Portfolio risk %.2f%% / %.2f%% | positions %d/%d",g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_positions,MaxPortfolioPositions):portfolio_reason);
+   if(!candidate)g_risk_status=(portfolio_ok?StringFormat("Portfolio risk %.2f%% / %.2f%% | exposures %d/%d",g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_exposures,MaxPortfolioPositions):portfolio_reason);
    if(candidate)
    {
       string why=blocked;AQOrderPlan plan;
       bool ready=why=="";
       if(ready)ready=AQEntryLimits::Pass(g_cfg.symbol,MagicNumber,MaxEntriesPerDay,CooldownBars,EntryTimeframe,why);
       if(ready)ready=AQOrderPlanner::Build(g_spec,g_signal==BUY_CANDIDATE?AQ_BUY:AQ_SELL,g_strategy.ATR(),ATRMultiplier,RewardRiskRatio,RiskPercent,plan,why);
-      if(ready)ready=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_positions,g_portfolio_used_percent,why);
+      if(ready)ready=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,why);
       if(ready)
       {
-         g_risk_status=StringFormat("%.8f lots | estimated SL loss %.2f | margin %.2f | portfolio after candidate %.2f%% / %.2f%% | positions %d/%d",plan.volume,plan.estimated_loss,plan.margin,g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_positions,MaxPortfolioPositions);
+         g_risk_status=StringFormat("%.8f lots | estimated SL loss %.2f | margin %.2f | portfolio after candidate %.2f%% / %.2f%% | exposures %d/%d",plan.volume,plan.estimated_loss,plan.margin,g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_exposures,MaxPortfolioPositions);
          g_log.Event("CANDIDATE",StringFormat("direction=%s|bar=%I64d|entry=%g|sl=%g|tp=%g|volume=%.8f",g_signal==BUY_CANDIDATE?"BUY":"SELL",(long)closed_bar,plan.entry,plan.sl,plan.tp,plan.volume));
          if(g_trader.ExecutionAllowed(why))
          {
-            AQTradeResult result;bool accepted=false;
-            if(g_signal==BUY_CANDIDATE)accepted=g_trader.Buy(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
-            else accepted=g_trader.Sell(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
-            decision=accepted?"REQUEST ACCEPTED":"REQUEST REJECTED";why=result.description;
+            string gate_reason;
+            if(!g_portfolio_lock.Acquire(120,gate_reason))
+            {decision="CANDIDATE DISCARDED";why=gate_reason;g_risk_status=why;}
+            else
+            {
+               bool live_ok=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,gate_reason);
+               if(live_ok)
+               {
+                  AQTradeResult result;bool accepted=false;
+                  if(g_signal==BUY_CANDIDATE)accepted=g_trader.Buy(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
+                  else accepted=g_trader.Sell(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
+                  decision=accepted?"REQUEST ACCEPTED":"REQUEST REJECTED";why=result.description;
+               }
+               else {decision="CANDIDATE DISCARDED";why=gate_reason;g_risk_status=why;}
+               g_portfolio_lock.Release();
+            }
          }
          else decision="CANDIDATE ONLY - execution locked";
       }

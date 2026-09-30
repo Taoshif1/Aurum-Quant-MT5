@@ -7,6 +7,7 @@
 #include <AurumQuant/Research/StrategyValidation.mqh>
 #include <AurumQuant/Trading/OrderPlan.mqh>
 #include <AurumQuant/Risk/PortfolioBudget.mqh>
+#include <AurumQuant/Risk/PortfolioLockPolicy.mqh>
 int main(){
  AQSymbolSpec s{};s.valid=true;s.bid=100;s.ask=100.1;s.point=0.1;s.digits=2;
  s.tick_size=0.25;s.tick_value_loss=2.5;s.volume_min=0.25;s.volume_max=2;s.volume_step=0.25;
@@ -59,6 +60,10 @@ int main(){
  assert(AQPortfolioBudget::Pass(10000,1.0,75,25,2,3,portfolio_percent,reason) && near(portfolio_percent,1.0));
  assert(!AQPortfolioBudget::Pass(10000,1.0,90,20,2,3,portfolio_percent,reason));
  assert(!AQPortfolioBudget::Pass(10000,1.0,20,10,3,3,portfolio_percent,reason));
+ assert(AQPortfolioLockPolicy::CanAcquire(1000,0));
+ assert(AQPortfolioLockPolicy::CanAcquire(1000,1000));
+ assert(!AQPortfolioLockPolicy::CanAcquire(1000,1001));
+ assert(!AQPortfolioLockPolicy::CanAcquire(1000,-1));
  int policies=0;
  for(int mode:{0,1,2,99})for(bool armed:{false,true})for(long account:{ACCOUNT_TRADE_MODE_DEMO,ACCOUNT_TRADE_MODE_REAL,ACCOUNT_TRADE_MODE_CONTEST}){
   bool expected=armed && ((mode==1 && account==ACCOUNT_TRADE_MODE_DEMO)||(mode==2 && account==ACCOUNT_TRADE_MODE_REAL));
@@ -74,5 +79,5 @@ int main(){
  AQPositionManager defaults;assert(!defaults.ExecutionAllowed(reason));
  int strategy_passed=0,strategy_failed=0;assert(AQStrategyValidation::Run(strategy_passed,strategy_failed));
  std::cout<<"Strategy assertions: "<<strategy_passed<<" passed, "<<strategy_failed<<" failed\n";
- std::cout<<"PASS: "<<samples<<" volume budgets, "<<policies<<" execution policies, portfolio budgets, invalid numeric inputs, locked mutation paths\n";
+ std::cout<<"PASS: "<<samples<<" volume budgets, "<<policies<<" execution policies, portfolio budgets, lock policy, invalid numeric inputs, locked mutation paths\n";
 }

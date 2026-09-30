@@ -13,7 +13,7 @@ The asset profile selects policy defaults; it never replaces actual broker speci
 - `Strategy/IStrategy`: plugin boundary. The current BreakoutPullback v1 state machine can later coexist with TrendContinuation, VolatilityBreakout, or MeanReversion without changing risk/execution modules.
 - `Strategy/MarketRegime`: inert interface returning `DATA_NOT_READY` or `TRANSITION` until ATR/normalized volatility, slope, ADX-style strength, and compression thresholds are approved.
 - `Strategy/SignalQuality`: unweighted evidence container for trend, breakout, pullback, confirmation, volatility, execution quality, and risk quality. It cannot trigger trades.
-- `Risk`: broker-aware sizing, per-instance start-of-day loss guard, symbol-plus-magic position counting, and cross-symbol portfolio stop-risk/position limits over a reserved magic range.
+- `Risk`: broker-aware sizing, per-instance start-of-day loss guard, symbol-plus-magic position counting, cross-symbol stop-risk/exposure limits over a reserved magic range, and a terminal-wide execution mutex for the final cross-chart recheck.
 - `Filters`: point-based spread threshold, server-time session window, configurable weekend policy, and MT5 Economic Calendar high-impact currency window.
 - `Trading`: the only order boundary. OBSERVE and the master safety lock are enforced here. Position management is scoped to future caller-selected EA tickets.
 - `UI`: chart diagnostic dashboard.
@@ -36,6 +36,6 @@ Initialization or decision flow blocks on invalid point/tick/volume data, disabl
 
 ## v1.2 candidate path
 
-Closed bar → StrategyEngine (prior channel + closed ATR) → BreakoutPullback → filters/daily/position guards → EntryLimits history → OrderPlanner → PortfolioGuard → TradeManager.
+Closed bar → StrategyEngine (prior channel + closed ATR) → BreakoutPullback → filters/daily/position guards → EntryLimits history → OrderPlanner → PortfolioGuard → PortfolioExecutionLock → final PortfolioGuard recheck → TradeManager.
 
 `OrderPlan` handles broker account-currency loss and margin estimates. `EntryLimits` reads entry-deal history for daily counts and bar cooldown. Candidates are consumed only during the new-bar evaluation and never deferred. A chart must match the configured symbol so tick dispatch follows the traded market. Strategy state resets when evaluation bars are skipped.

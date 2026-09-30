@@ -20,7 +20,7 @@ public:
       double total=existing_risk+candidate_risk;
       if(!MathIsValidNumber(total)) { reason="invalid portfolio risk total"; return false; }
       used_percent=total/equity*100.0;
-      if(positions>=max_positions) { reason="portfolio position limit reached"; return false; }
+      if(positions>=max_positions) { reason="portfolio exposure-count limit reached"; return false; }
       double budget=equity*limit_percent/100.0;
       if(total>budget+1e-8) { reason="portfolio risk budget exceeded"; return false; }
       reason="OK"; return true;
