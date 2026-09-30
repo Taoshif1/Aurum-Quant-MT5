@@ -51,7 +51,7 @@ After native compilation, run `AurumQuantValidation` and require `AURUM|SELF_TES
   -TesterJournal 'OPTIONAL_TESTER_JOURNAL.log'
 ```
 
-The collector refuses missing/dirty compile logs, a journal without the exact 78/0 result, an empty broker probe, or any probe row with `status != OK`. It copies the evidence into an ignored timestamped folder, hashes each file with SHA-256, and writes `evidence-manifest.json`. Optional tester artifacts are recorded explicitly as present/absent; their absence does not convert a compile/self-test evidence bundle into a smoke/backtest pass.
+The collector refuses missing/dirty compile logs, missing/empty compiled EX5 outputs, a journal without the exact 78/0 result, an empty broker probe, or any probe row with `status != OK`. It copies the three compile logs, the exact three EX5 binaries, validation/probe evidence, and optional tester artifacts into an ignored timestamped folder, hashes each file with SHA-256, and writes `evidence-manifest.json`. Optional tester artifacts are recorded explicitly as present/absent; their absence does not convert a compile/self-test evidence bundle into a smoke/backtest pass.
 
 
 ### Independent evidence verification
@@ -62,4 +62,4 @@ After collection, verify the bundle from a separate shell or machine:
 python3 tools/check-native-evidence.py evidence/native-YYYYMMDD-HHMMSS
 ```
 
-The verifier does not trust the PowerShell manifest blindly. It recomputes every SHA-256 and byte size, rechecks all three compiler logs, searches the collected logs for the exact 78/0 native self-test result, parses the broker-probe CSV, checks every broker row is `OK`, and verifies the broker-symbol list matches the manifest. CI runs `--self-test` on every push/PR and proves that a synthetically valid bundle passes while a tampered file is rejected.
+The verifier does not trust the PowerShell manifest blindly. It recomputes every SHA-256 and byte size, requires the exact three compiled EX5 files, rechecks all three compiler logs, searches the collected logs for the exact 78/0 native self-test result, parses the broker-probe CSV, checks every broker row is `OK`, and verifies the broker-symbol list matches the manifest. CI runs `--self-test` on every push/PR and proves that a synthetically valid bundle passes while a tampered file is rejected.

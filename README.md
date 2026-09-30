@@ -61,6 +61,18 @@ python3 tools/check-source-release.py
 
 Outputs go to ignored `dist/`: a versioned source ZIP, JSON manifest, and ZIP SHA-256 file. GitHub Actions rebuilds the ZIP twice, requires byte-identical output, verifies the manifest and hashes, then uploads the research source bundle as a 14-day run artifact. This is **source packaging only**. It is not an EX5 build, signed installer, broker certification, or profitability evidence. See [source release packaging](docs/SOURCE-RELEASE.md).
 
+## Commercial release candidate gate
+
+After official MetaEditor compilation and native evidence collection, `tools/Collect-Native-Evidence.ps1` also binds the exact three compiled EX5 files into the verified evidence bundle. A compiled candidate can then be built only from evidence whose `source_commit` matches the current checkout:
+
+```sh
+python3 tools/check-native-evidence.py PATH_TO_NATIVE_EVIDENCE
+python3 tools/build-commercial-candidate.py PATH_TO_NATIVE_EVIDENCE
+python3 tools/check-commercial-candidate.py
+```
+
+The candidate ZIP contains compiled EX5 files, six locked presets, operator docs, and a compiled-package installer. Its manifest intentionally keeps `commercial_ready=false`, `performance_validation_complete=false`, `license_enforcement_complete=false`, and `code_signing_complete=false` until those separate gates exist. See [commercial release process](docs/COMMERCIAL-RELEASE.md).
+
 ## Portable regression checks
 
 ```sh

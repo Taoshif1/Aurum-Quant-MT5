@@ -20,12 +20,15 @@ EXACT_FILES = (
     Path("Tests/AurumQuantBrokerProbe.mq5"),
     Path("tools/Compile-MQL5.ps1"),
     Path("tools/Install-MQL5.ps1"),
+    Path("tools/Install-Commercial.ps1"),
     Path("tools/Collect-Native-Evidence.ps1"),
     Path("tools/check-presets.py"),
     Path("tools/build-source-release.py"),
     Path("tools/check-source-release.py"),
     Path("tools/check-native-evidence.py"),
     Path("tools/parse-tester-stats.py"),
+    Path("tools/build-commercial-candidate.py"),
+    Path("tools/check-commercial-candidate.py"),
     Path("tools/release-audit.py"),
 )
 GLOBS = (
