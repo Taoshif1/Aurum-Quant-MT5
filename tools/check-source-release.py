@@ -50,7 +50,33 @@ def main() -> None:
         raise RuntimeError("ZIP SHA256 mismatch")
 
     root = f"AurumQuant-MT5-source-v{version}/"
-    listed = {row["path"]: row for row in external_manifest["files"]}
+    rows = external_manifest.get("files")
+    if not isinstance(rows, list) or not rows:
+        raise RuntimeError("manifest file list missing or empty")
+    listed = {row["path"]: row for row in rows}
+    if len(listed) != len(rows):
+        raise RuntimeError("manifest contains duplicate file paths")
+
+    required = {
+        "README.md",
+        "Experts/AurumQuantEA.mq5",
+        "Tests/AurumQuantValidation.mq5",
+        "tools/Compile-MQL5.ps1",
+        "tools/Install-MQL5.ps1",
+        "docs/SOURCE-RELEASE.md",
+        "Presets/BTCUSD-Research.set",
+        "Presets/ETHUSD-Research.set",
+        "Presets/EURUSD-Research.set",
+        "Presets/Generic-Research.set",
+        "Presets/XAGUSD-Research.set",
+        "Presets/XAUUSD-Research.set",
+    }
+    missing_required = required - set(listed)
+    if missing_required:
+        raise RuntimeError(f"required release files absent from manifest: {sorted(missing_required)}")
+    if not any(path.startswith("Include/AurumQuant/") for path in listed):
+        raise RuntimeError("AurumQuant include tree missing from package")
+
     with zipfile.ZipFile(zip_path) as archive:
         names = archive.namelist()
         if len(names) != len(set(names)):
@@ -84,6 +110,26 @@ def main() -> None:
             data = archive.read(root + path)
             if len(data) != row["bytes"] or sha256(data) != row["sha256"]:
                 raise RuntimeError(f"manifest hash/size mismatch: {path}")
+
+        packaged_ea = archive.read(root + "Experts/AurumQuantEA.mq5").decode("utf-8")
+        version_match = re.search(r'^#property\\s+version\\s+"([^"]+)"', packaged_ea, re.MULTILINE)
+        if not version_match or version_match.group(1) != version:
+            raise RuntimeError("manifest version differs from packaged EA")
+
+        for preset in sorted(path for path in listed if path.startswith("Presets/") and path.endswith(".set")):
+            values = {}
+            for line in archive.read(root + preset).decode("utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith(";"):
+                    continue
+                key, value = line.split("=", 1)
+                if key in values:
+                    raise RuntimeError(f"duplicate packaged preset input: {preset}: {key}")
+                values[key] = value
+            if values.get("OperatingMode") != "0" or values.get("EnableOrderSubmission") != "false":
+                raise RuntimeError(f"unsafe execution lock in packaged preset: {preset}")
+            if values.get("EnableBreakEven") != "false" or values.get("EnableTrailingStop") != "false":
+                raise RuntimeError(f"position management unexpectedly armed in packaged preset: {preset}")
 
     print(
         f"PASS: verified {zip_path.name} "
