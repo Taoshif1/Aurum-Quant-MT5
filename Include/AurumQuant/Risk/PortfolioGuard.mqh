@@ -49,15 +49,15 @@ public:
       }
       reason="OK";return true;
    }
-   static bool CurrentWithinLimits(ulong magic_base,int magic_span,int max_positions,double max_risk_percent,double &risk,int &exposures,double &used_percent,string &reason)
+   static bool CurrentWithinLimits(ulong magic_base,int magic_span,int max_exposures,double max_risk_percent,double &risk,int &exposures,double &used_percent,string &reason)
    {
       if(!Snapshot(magic_base,magic_span,risk,exposures,reason)) return false;
-      return AQPortfolioBudget::Pass(AccountInfoDouble(ACCOUNT_EQUITY),max_risk_percent,risk,0,exposures,max_positions,used_percent,reason);
+      return AQPortfolioBudget::Pass(AccountInfoDouble(ACCOUNT_EQUITY),max_risk_percent,risk,0,exposures,max_exposures,used_percent,reason);
    }
-   static bool CanAdd(ulong magic_base,int magic_span,int max_positions,double max_risk_percent,double candidate_risk,double &risk,int &exposures,double &used_percent,string &reason)
+   static bool CanAdd(ulong magic_base,int magic_span,int max_exposures,double max_risk_percent,double candidate_risk,double &risk,int &exposures,double &used_percent,string &reason)
    {
       if(!Snapshot(magic_base,magic_span,risk,exposures,reason)) return false;
-      return AQPortfolioBudget::Pass(AccountInfoDouble(ACCOUNT_EQUITY),max_risk_percent,risk,candidate_risk,exposures,max_positions,used_percent,reason);
+      return AQPortfolioBudget::Pass(AccountInfoDouble(ACCOUNT_EQUITY),max_risk_percent,risk,candidate_risk,exposures,max_exposures,used_percent,reason);
    }
 };
 #endif
