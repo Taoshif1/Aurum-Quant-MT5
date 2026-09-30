@@ -22,7 +22,7 @@ The current implementation exposes a LIVE mode but supplied presets never select
 
 ## Multiple assets
 
-Open a separate broker chart for each asset and apply its preset. Unique preset magic numbers are supplied, but copies of the same preset need a different magic. Never run two instances with the same symbol/magic. Use separate terminals/accounts for independent experiments. Existing positions or pending orders on netting symbols block new entries to avoid mixing manual or other-EA exposure.
+Open a separate broker chart for each asset and apply its preset. For a single trading account, keep all Aurum instances that share the portfolio guard inside the same MT5 terminal process; the atomic mutex and original-risk terminal variables are not shared across separate MT5 terminal processes. Unique preset magic numbers are supplied, but copies of the same preset need a different magic. Never run two instances with the same symbol/magic. Use separate terminals/accounts for independent experiments. Existing positions or pending orders on netting symbols block new entries to avoid mixing manual or other-EA exposure.
 
 Daily loss, entry count and cooldown are scoped to symbol/magic. Cross-symbol Aurum instances additionally share the configured portfolio stop-risk and exposure cap through the reserved magic range. This controller limits grouped estimated stop risk, but it does not model asset correlation.
 
