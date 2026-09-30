@@ -15,10 +15,10 @@ The asset profile selects policy defaults; it never replaces actual broker speci
 - `Strategy/SignalQuality`: unweighted evidence container for trend, breakout, pullback, confirmation, volatility, execution quality, and risk quality. It cannot trigger trades.
 - `Risk`: broker-aware sizing, per-instance start-of-day loss guard, symbol-plus-magic position counting, cross-symbol stop-risk/exposure limits over a reserved magic range, and a terminal-wide execution mutex for the final cross-chart recheck.
 - `Filters`: point-based spread threshold, server-time session window, configurable weekend policy, and MT5 Economic Calendar high-impact currency window.
-- `Trading`: the only order boundary. OBSERVE and the master safety lock are enforced here. Position management is scoped to future caller-selected EA tickets.
+- `Trading`: the only order/mutation boundary. OBSERVE and the master safety lock are enforced here. Position management owns only matching symbol+magic positions, persists original risk before stop changes, and applies tighten-only break-even/fixed/ATR trailing proposals through broker stop/freeze validation.
 - `UI`: chart diagnostic dashboard.
 
-`OnTick` refreshes market/filter/guard/dashboard state and is the future home of enabled open-position management. A new current-bar timestamp exposes exactly one newly closed bar identity. The identity must differ from the last evaluated bar; the execution boundary independently refuses a repeated signal-bar identity and marks it consumed before contacting the broker. Therefore a rejection cannot be retried on every tick.
+`OnTick` refreshes market/filter/guard/dashboard state and also runs enabled open-position management independently of entry filters once symbol data is fresh and the execution policy is armed. A new current-bar timestamp exposes exactly one newly closed bar identity. The identity must differ from the last evaluated bar; the execution boundary independently refuses a repeated signal-bar identity and marks it consumed before contacting the broker. Therefore a rejection cannot be retried on every tick.
 
 Initialization runs a checklist for symbol economics, timeframes, indicator handles, risk inputs, spread/session/news configuration, mode, freshness threshold, persistent daily baseline, and the OBSERVE assertion. Unsafe failures keep the EA loaded for dashboard diagnosis while every execution gate remains closed.
 
@@ -34,8 +34,8 @@ Initialization runs a checklist for symbol economics, timeframes, indicator hand
 
 Initialization or decision flow blocks on invalid point/tick/volume data, disabled symbol trading, invalid configuration, unavailable enabled calendar data, filter rejection, daily limit, or position limit. A configured spread filter requires a positive per-symbol threshold.
 
-## v1.2 candidate path
+## v1.23 candidate path
 
 Closed bar → StrategyEngine (prior channel + closed ATR) → BreakoutPullback → filters/daily/position guards → EntryLimits history → OrderPlanner → PortfolioGuard → PortfolioExecutionLock → final PortfolioGuard recheck → TradeManager.
 
-`OrderPlan` handles broker account-currency loss and margin estimates. `EntryLimits` reads entry-deal history for daily counts and bar cooldown. Candidates are consumed only during the new-bar evaluation and never deferred. A chart must match the configured symbol so tick dispatch follows the traded market. Strategy state resets when evaluation bars are skipped.
+`OrderPlan` handles broker account-currency loss and margin estimates. `StopManagementPolicy` is pure tighten-only logic; `PositionManager` supplies persisted original risk, closed ATR when required, ownership checks and the final broker mutation boundary. `EntryLimits` reads entry-deal history for daily counts and bar cooldown. Candidates are consumed only during the new-bar evaluation and never deferred. A chart must match the configured symbol so tick dispatch follows the traded market. Strategy state resets when evaluation bars are skipped.
