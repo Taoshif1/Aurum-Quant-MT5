@@ -195,8 +195,12 @@ def main() -> None:
         "README must retain research-preview status language",
     )
     require(
-        "Compiled EX5 distribution | Not produced" in release,
-        "release checklist must not imply EX5 production",
+        "Compiled EX5 candidate distribution | Gated builder/verifier implemented" in release,
+        "release checklist must document the gated compiled candidate",
+    )
+    require(
+        "`commercial_ready=false`" in release,
+        "release checklist must keep compiled candidates explicitly non-commercial-ready",
     )
 
     print(
