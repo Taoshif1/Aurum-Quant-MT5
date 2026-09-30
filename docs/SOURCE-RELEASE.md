@@ -31,6 +31,7 @@ The source bundle includes:
 - user-facing `docs/*.md`
 - `README.md`
 - the PowerShell install and official-MetaEditor compile helpers
+- preset validation plus source-package build/verification Python tools
 
 It deliberately excludes Git metadata, GitHub workflow files, portable test shims, `AGENTS.md`, local build output and compiled `.ex5` files.
 
