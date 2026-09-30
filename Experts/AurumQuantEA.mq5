@@ -1,5 +1,5 @@
 #property copyright "Aurum Quant MT5 research project"
-#property version   "1.220"
+#property version   "1.230"
 #property strict
 #property description "Multi-asset breakout/retest research EA. Unvalidated strategy."
 
@@ -98,10 +98,10 @@ AQTrendEngine g_trend_engine; AQStrategyEngine g_strategy; AQDailyGuard g_daily;
 AQTradeManager g_trader; AQPositionManager g_positions; AQDashboard g_dashboard; AQPortfolioExecutionLock g_portfolio_lock;
 ENUM_TREND_STATE g_trend=TREND_DATA_NOT_READY; ENUM_SIGNAL_STATE g_signal=NO_SETUP; ENUM_NEWS_STATE g_news=NEWS_DISABLED;
 string g_critical="",g_spread_state="",g_session_state="",g_news_state="DISABLED",g_weekend_state="";
-double g_daily_loss=0; bool g_engine_ready=false,g_symbol_valid=false,g_trend_initialized=false,g_daily_initialized=false;
+double g_daily_loss=0; bool g_engine_ready=false,g_symbol_valid=false,g_trend_initialized=false,g_daily_initialized=false,g_management_initialized=false;
 double g_portfolio_risk=0,g_portfolio_used_percent=0;int g_portfolio_exposures=0;
 bool g_paused=false;
-string g_risk_status="No candidate evaluated",g_last_decision="";
+string g_risk_status="No candidate evaluated",g_management_status="DISABLED",g_last_decision="";
 datetime g_evaluation_bar=0,g_evaluation_time=0,g_last_news_check=0;
 
 void LoadSettings()
@@ -118,7 +118,13 @@ int OnInit()
    if(RunDeterministicSelfTests){int tests_passed=0,tests_failed=0;g_diagnostic.Check(AQValidationSuite::Run(tests_passed,tests_failed),StringFormat("deterministic self-tests failed %d",tests_failed));}
    g_diagnostic.Check(g_cfg.symbol!="","symbol is empty");
    g_diagnostic.Check(g_cfg.symbol==_Symbol,"attach EA to the configured symbol chart");
-   g_diagnostic.Check(!EnableBreakEven && !EnableTrailingStop,"break-even/trailing are not implemented in v1");
+   g_diagnostic.Check(!EnableBreakEven ||
+      (BreakEvenMethod==BE_BY_R && MathIsValidNumber(BreakEvenTriggerR) && BreakEvenTriggerR>0) ||
+      (BreakEvenMethod==BE_BY_DISTANCE && MathIsValidNumber(BreakEvenDistancePoints) && BreakEvenDistancePoints>0),
+      "invalid break-even configuration");
+   g_diagnostic.Check(!EnableTrailingStop ||
+      ((TrailingMethod==TRAIL_FIXED || TrailingMethod==TRAIL_ATR) && MathIsValidNumber(TrailingValue) && TrailingValue>0),
+      "trailing v1 supports only positive FIXED or ATR distance");
    g_diagnostic.Check(!EnableResearchStrategy || (StopLossModel==SL_ATR && ATRMultiplier>0 && MathIsValidNumber(ATRMultiplier)),"v1 requires a positive ATR stop model");
    g_diagnostic.Check(MaxEntriesPerDay>=1 && CooldownBars>=0,"invalid entry frequency limits");
    g_diagnostic.Check(g_strategy.Init(g_cfg.symbol,EntryTimeframe,EnableResearchStrategy,BreakoutLookback,ATRPeriod,BreakoutBufferATR,RetestToleranceATR,RetestTimeoutBars),"strategy/ATR initialization failed");
@@ -136,6 +142,9 @@ int OnInit()
    string daily_reason="symbol invalid";if(g_symbol_valid)g_daily_initialized=g_daily.Init(g_cfg.symbol,MagicNumber,DailyLossLimitPercent,daily_reason);g_diagnostic.Check(g_daily_initialized,"daily guard: "+daily_reason);
    string portfolio_lock_reason;g_diagnostic.Check(g_portfolio_lock.Init(PortfolioMagicBase,PortfolioMagicSpan,MagicNumber,portfolio_lock_reason),"portfolio execution lock: "+portfolio_lock_reason);
    g_market.Init(g_cfg.symbol,g_cfg.entry_tf);g_trader.Init(OperatingMode,EnableOrderSubmission,MagicNumber,g_cfg.symbol);g_positions.Init(MagicNumber,g_cfg.symbol,OperatingMode,EnableOrderSubmission);
+   string management_init_reason;
+   g_management_initialized=g_positions.InitManagement(EntryTimeframe,ATRPeriod,EnableTrailingStop && TrailingMethod==TRAIL_ATR,management_init_reason);
+   g_diagnostic.Check(g_management_initialized,"position management: "+management_init_reason);
    g_trader.SetDeviation(MaxDeviationPoints);
    string execution_reason;bool execution_allowed=g_trader.ExecutionAllowed(execution_reason);g_diagnostic.Check(!(OperatingMode==MODE_OBSERVE && execution_allowed),"OBSERVE execution assertion failed");
    if(g_symbol_valid)g_log.Event("SYMBOL_VALID",StringFormat("digits=%d point=%g tick_size=%g tick_value_loss=%g contract=%g volume=[%g,%g] step=%g stops=%d freeze=%d mode=%d",g_spec.digits,g_spec.point,g_spec.tick_size,g_spec.tick_value_loss,g_spec.contract_size,g_spec.volume_min,g_spec.volume_max,g_spec.volume_step,g_spec.stops_level,g_spec.freeze_level,g_spec.trade_mode));
@@ -143,7 +152,7 @@ int OnInit()
    return INIT_SUCCEEDED;
 }
 
-void OnDeinit(const int reason){g_portfolio_lock.Release();g_strategy.Shutdown();g_trend_engine.Shutdown();g_dashboard.Clear();g_log.Event("DEINIT",IntegerToString(reason));}
+void OnDeinit(const int reason){g_portfolio_lock.Release();g_positions.ShutdownManagement();g_strategy.Shutdown();g_trend_engine.Shutdown();g_dashboard.Clear();g_log.Event("DEINIT",IntegerToString(reason));}
 
 void OnTick()
 {
@@ -155,6 +164,26 @@ void OnTick()
    string position_reason;bool position_ok=AQPositionGuard::CanOpen(g_cfg.symbol,MagicNumber,MaxOpenPositions,position_reason);
    string portfolio_reason;bool portfolio_ok=AQPortfolioGuard::CurrentWithinLimits(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioExposures,MaxPortfolioRiskPercent,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,portfolio_reason);
    int tick_age=INT_MAX;bool fresh=g_symbol_valid && g_market.Fresh(MaxTickAgeSeconds,tick_age);datetime closed_bar=0;bool evaluated=false;
+   if(EnableBreakEven || EnableTrailingStop)
+   {
+      string management_lock;
+      if(!g_management_initialized)g_management_status="BLOCKED: initialization failed";
+      else if(!g_positions.ExecutionAllowed(management_lock))g_management_status="LOCKED: "+management_lock;
+      else if(!g_symbol_valid)g_management_status="BLOCKED: symbol data invalid";
+      else if(!fresh)g_management_status=StringFormat("BLOCKED: market data stale (%d seconds)",tick_age);
+      else
+      {
+         int modified=0;string management_reason;
+         if(g_positions.Manage(EnableBreakEven,BreakEvenMethod,BreakEvenTriggerR,BreakEvenDistancePoints,
+              EnableTrailingStop,TrailingMethod,TrailingValue,modified,management_reason))
+         {
+            g_management_status=management_reason;
+            if(modified>0)g_log.Event("POSITION_MANAGEMENT",StringFormat("modified=%d|status=%s",modified,management_reason));
+         }
+         else g_management_status="BLOCKED: "+management_reason;
+      }
+   }
+   else g_management_status="DISABLED";
    if(g_engine_ready && fresh && g_market.IsNewBar(closed_bar))
    {
       evaluated=true;g_evaluation_bar=closed_bar;g_evaluation_time=server;g_log.Event("NEW_BAR",StringFormat("tf=%s|closed_bar=%s",EnumToString(EntryTimeframe),TimeToString(closed_bar,TIME_DATE|TIME_MINUTES)));
@@ -208,7 +237,8 @@ void OnTick()
    int count=AQPositionGuard::Count(g_cfg.symbol,MagicNumber);
    string execution_reason;bool execution_allowed=g_trader.ExecutionAllowed(execution_reason);string lock_state=(execution_allowed?"ARMED":"LOCKED: "+execution_reason);string freshness=(fresh?StringFormat("FRESH (%d seconds)",tick_age):StringFormat("STALE/UNAVAILABLE (%d seconds)",tick_age));
    g_dashboard.PauseButton(g_paused);
-   g_dashboard.Render(g_cfg,(g_engine_ready?"READY":"BLOCKED"),(g_symbol_valid?"VALID":"INVALID"),freshness,lock_state,g_risk_status,g_evaluation_bar,g_evaluation_time,g_trend,g_signal,spread,g_spread_state,g_session_state,g_news_state,g_weekend_state,g_daily_loss,count,decision,blocked);
+   string dashboard_risk=g_risk_status+" | Mgmt: "+g_management_status;
+   g_dashboard.Render(g_cfg,(g_engine_ready?"READY":"BLOCKED"),(g_symbol_valid?"VALID":"INVALID"),freshness,lock_state,dashboard_risk,g_evaluation_bar,g_evaluation_time,g_trend,g_signal,spread,g_spread_state,g_session_state,g_news_state,g_weekend_state,g_daily_loss,count,decision,blocked);
 }
 
 void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
