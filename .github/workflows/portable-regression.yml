@@ -1,4 +1,4 @@
-name: Portable logic regressions (not MT5 compilation)
+name: Portable logic regressions and source package (not MT5 compilation)
 on:
   push:
   pull_request:
@@ -8,7 +8,7 @@ jobs:
   portable:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Validate patch whitespace
@@ -19,3 +19,21 @@ jobs:
         run: /tmp/aurum-regression
       - name: Verify preset safety and inputs
         run: python3 tools/check-presets.py
+      - name: Build deterministic source release
+        run: python3 tools/build-source-release.py
+      - name: Verify source release
+        run: python3 tools/check-source-release.py
+      - name: Verify reproducible source ZIP
+        shell: bash
+        run: |
+          before="$(sha256sum dist/AurumQuant-MT5-source-v*.zip)"
+          python3 tools/build-source-release.py
+          after="$(sha256sum dist/AurumQuant-MT5-source-v*.zip)"
+          test "$before" = "$after"
+      - name: Upload research source artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: aurum-quant-source-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
