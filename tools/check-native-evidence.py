@@ -16,6 +16,11 @@ REQUIRED_COMPILE_LOGS = {
     "AurumQuantValidation.log",
     "AurumQuantBrokerProbe.log",
 }
+REQUIRED_EX5 = {
+    "AurumQuantEA.ex5",
+    "AurumQuantValidation.ex5",
+    "AurumQuantBrokerProbe.ex5",
+}
 
 
 def sha256(path: Path) -> str:
@@ -42,6 +47,8 @@ def verify(directory: Path) -> None:
     require(data.get("evidence_kind") == "native-validation-evidence", "unexpected evidence kind")
     require(data.get("required_native_self_test") == "passed=78|failed=0", "native self-test target drift")
     require(data.get("compile_result") == "0 errors, 0 warnings", "compile result metadata is not clean")
+    require(data.get("compiled_ex5_included") is True, "compiled EX5 evidence flag missing")
+    require(set(data.get("compiled_ex5_files", [])) == REQUIRED_EX5, "compiled EX5 manifest list mismatch")
     commit = str(data.get("source_commit", "")).strip()
     require(bool(re.fullmatch(r"[0-9a-fA-F]{40}", commit)), "source_commit must be a 40-character Git SHA")
 
@@ -65,6 +72,7 @@ def verify(directory: Path) -> None:
         copied.append(path)
 
     compile_hits: set[str] = set()
+    ex5_hits: set[str] = set()
     self_test_found = False
     csv_candidates: list[Path] = []
     for path in copied:
@@ -74,6 +82,10 @@ def verify(directory: Path) -> None:
                 compile_hits.add(required)
                 text = path.read_text(encoding="utf-8", errors="replace")
                 require(CLEAN_COMPILE in text, f"compile log is not clean: {path.name}")
+        for required in REQUIRED_EX5:
+            if original.endswith(required):
+                ex5_hits.add(required)
+                require(path.stat().st_size > 0, f"compiled EX5 is empty: {path.name}")
         if path.suffix.lower() in {".log", ".txt"}:
             text = path.read_text(encoding="utf-8", errors="replace")
             if EXPECTED_SELF_TEST in text:
@@ -82,6 +94,7 @@ def verify(directory: Path) -> None:
             csv_candidates.append(path)
 
     require(compile_hits == REQUIRED_COMPILE_LOGS, f"required compiler logs missing: {sorted(REQUIRED_COMPILE_LOGS-compile_hits)}")
+    require(ex5_hits == REQUIRED_EX5, f"required compiled EX5 files missing: {sorted(REQUIRED_EX5-ex5_hits)}")
     require(self_test_found, "native validation 78/0 result not found")
     require(len(csv_candidates) == 1, f"expected exactly one broker-probe CSV, found {len(csv_candidates)}")
 
@@ -106,13 +119,15 @@ def write_fixture(root: Path) -> None:
     files: list[tuple[str, bytes]] = []
     for i, name in enumerate(sorted(REQUIRED_COMPILE_LOGS), start=1):
         files.append((f"{i:02d}-{name}", f"header\n{CLEAN_COMPILE}\n".encode()))
-    files.append(("04-validation-journal.log", f"x\n{EXPECTED_SELF_TEST}\n".encode()))
+    for i, name in enumerate(sorted(REQUIRED_EX5), start=4):
+        files.append((f"{i:02d}-{name}", ("fixture-" + name).encode()))
+    files.append(("07-validation-journal.log", f"x\n{EXPECTED_SELF_TEST}\n".encode()))
     probe = (
         "captured_gmt,symbol,status,error\n"
         "2026.09.30 10:00:00,XAUUSD,OK,\n"
         "2026.09.30 10:00:00,BTCUSD,OK,\n"
     ).encode()
-    files.append(("05-BrokerProbe-test.csv", probe))
+    files.append(("08-BrokerProbe-test.csv", probe))
 
     manifest_files = []
     for name, content in files:
@@ -130,6 +145,8 @@ def write_fixture(root: Path) -> None:
         "terminal_data": "fixture",
         "required_native_self_test": "passed=78|failed=0",
         "compile_result": "0 errors, 0 warnings",
+        "compiled_ex5_included": True,
+        "compiled_ex5_files": sorted(REQUIRED_EX5),
         "broker_probe_symbols": ["XAUUSD", "BTCUSD"],
         "tester_report_included": False,
         "tester_journal_included": False,

@@ -25,6 +25,10 @@ jobs:
         run: python3 tools/check-native-evidence.py --self-test
       - name: Self-test Strategy Tester stats parser
         run: python3 tools/parse-tester-stats.py --self-test
+      - name: Verify commercial candidate builder fails closed without native evidence
+        run: python3 tools/build-commercial-candidate.py --self-test
+      - name: Self-test commercial candidate verifier
+        run: python3 tools/check-commercial-candidate.py --self-test
       - name: Build deterministic source release
         run: python3 tools/build-source-release.py
       - name: Verify source release

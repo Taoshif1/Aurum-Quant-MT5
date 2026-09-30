@@ -12,6 +12,8 @@
 - Add a native broker-capability probe and checksummed evidence collector for compiler logs, deterministic native validation output, broker economics, and optional tester artifacts.
 - Add an independent cross-platform native-evidence verifier with CI self-tests that reject tampered bundles.
 - Add a strict Strategy Tester journal parser that converts Aurum tester metrics to JSON and rejects non-finite or inconsistent records.
+- Bind the exact compiled EX5 outputs into native evidence and require them during independent verification.
+- Add a deterministic compiled commercial-candidate builder/verifier and compiled-package installer; candidate manifests remain explicitly not commercial-ready until performance, licensing and signing gates are completed.
 
 ## 1.23 research preview — 2026-09-30
 

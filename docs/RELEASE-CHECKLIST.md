@@ -15,12 +15,12 @@ A price target is not a quality metric. This source preview must not be marketed
 | Official MetaEditor compilation | Pending for v1.24; require zero errors and warnings for EA and validation script |
 | Native self-test | Pending; require passed=78 and failed=0 |
 | Windows install/compile tools | Written; execution on Windows pending |
-| Native evidence capture | Broker probe and PowerShell collector implemented; collector requires three clean compiler logs, native 78/0 validation output, and all-OK broker rows before producing a checksummed evidence manifest; independent Python verifier recomputes hashes and revalidates semantics, with tamper rejection covered in CI |
+| Native evidence capture | Broker probe and PowerShell collector implemented; collector requires three clean compiler logs, the exact three non-empty compiled EX5 files, native 78/0 validation output, and all-OK broker rows before producing a checksummed evidence manifest; independent Python verifier recomputes hashes and revalidates semantics, with tamper rejection covered in CI |
 | Broker integration | Pending for each intended broker and account mode |
 | Tester metric extraction | Structured `AURUM|TESTER_STATS` parser implemented with CI self-tests; it emits raw JSON metrics only and rejects malformed/non-finite/inconsistent records |
 | Historical real-tick testing | Pending; no performance data claimed |
 | Out-of-sample and demo forward tests | Pending |
-| Compiled EX5 distribution | Not produced in this environment; source artifact explicitly declares EX5/native compilation absent |
+| Compiled EX5 candidate distribution | Gated builder/verifier implemented. It can only package EX5 copies from verified same-commit native evidence and keeps `commercial_ready=false`; no real candidate can be produced in this environment until native evidence exists |
 
 ## Native validation matrix
 
@@ -32,4 +32,4 @@ Use real ticks where available, realistic costs, held-out dates and multiple mar
 
 ## Explicitly unfinished product capabilities
 
-Swing trailing, licensing, signed installers and storefront delivery are not implemented. The deterministic CI source artifact is not a substitute for those release capabilities. Unsupported trailing methods fail initialization rather than silently degrading. Production support requires broker reports and a native test environment.
+Swing trailing, license/activation enforcement, code signing, final sales installer signing, storefront delivery, performance acceptance criteria, and customer support policy are not implemented. The deterministic CI source artifact is not a substitute for those release capabilities. Unsupported trailing methods fail initialization rather than silently degrading. Production support requires broker reports and a native test environment.

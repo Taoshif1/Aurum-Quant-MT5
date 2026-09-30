@@ -23,6 +23,16 @@ foreach($log in $compileLogs){
   if($text -notmatch 'Result: 0 errors, 0 warnings'){throw "Compile log is not clean: $log"}
 }
 
+$compiledBinaries=@(
+  (Join-Path $repo 'Experts\AurumQuantEA.ex5'),
+  (Join-Path $repo 'Tests\AurumQuantValidation.ex5'),
+  (Join-Path $repo 'Tests\AurumQuantBrokerProbe.ex5')
+)
+foreach($binary in $compiledBinaries){
+  if(!(Test-Path -LiteralPath $binary -PathType Leaf)){throw "Required compiled EX5 missing: $binary"}
+  if((Get-Item -LiteralPath $binary).Length -le 0){throw "Compiled EX5 is empty: $binary"}
+}
+
 $validation=Get-Content -LiteralPath $ValidationJournal -Raw
 if($validation -notmatch 'AURUM\|SELF_TEST\|RESULT\|passed=78\|failed=0'){
   throw 'Validation journal does not contain passed=78|failed=0.'
@@ -55,7 +65,7 @@ $stamp=Get-Date -Format 'yyyyMMdd-HHmmss'
 $out=Join-Path $OutputRoot ('native-'+$stamp)
 New-Item -ItemType Directory -Path $out -Force | Out-Null
 
-$inputs=@($compileLogs)+@($ValidationJournal,$BrokerProbe)+$optional
+$inputs=@($compileLogs)+@($compiledBinaries)+@($ValidationJournal,$BrokerProbe)+$optional
 $items=@()
 $index=0
 foreach($source in $inputs){
@@ -81,6 +91,8 @@ $manifest=[ordered]@{
   terminal_data=$TerminalData
   required_native_self_test='passed=78|failed=0'
   compile_result='0 errors, 0 warnings'
+  compiled_ex5_included=$true
+  compiled_ex5_files=@($compiledBinaries | ForEach-Object { [IO.Path]::GetFileName($_) })
   broker_probe_symbols=@($probeRows | ForEach-Object { $_.symbol })
   tester_report_included=($TesterReport -ne '')
   tester_journal_included=($TesterJournal -ne '')
@@ -89,4 +101,4 @@ $manifest=[ordered]@{
 $manifestPath=Join-Path $out 'evidence-manifest.json'
 $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 Write-Output "PASS: native evidence collected at $out"
-Write-Output "PASS: $($probeRows.Count) broker symbol row(s), 3 clean compiler logs, native self-test 78/0"
+Write-Output "PASS: $($probeRows.Count) broker symbol row(s), 3 clean compiler logs, 3 compiled EX5 files, native self-test 78/0"

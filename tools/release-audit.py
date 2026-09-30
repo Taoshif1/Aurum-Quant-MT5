@@ -162,8 +162,11 @@ def main() -> None:
     require("python3 tools/check-source-release.py" in workflow, "CI source verification gate missing")
     require("python3 tools/check-native-evidence.py --self-test" in workflow, "CI native-evidence verifier self-test missing")
     require("python3 tools/parse-tester-stats.py --self-test" in workflow, "CI tester-stats parser self-test missing")
+    require("python3 tools/build-commercial-candidate.py --self-test" in workflow, "CI commercial candidate builder fail-closed test missing")
+    require("python3 tools/check-commercial-candidate.py --self-test" in workflow, "CI commercial candidate verifier self-test missing")
     require("dist/" in gitignore.splitlines(), "generated dist/ must remain ignored")
     require("evidence/" in gitignore.splitlines(), "generated evidence/ must remain ignored")
+    require("dist-commercial/" in gitignore.splitlines(), "generated dist-commercial/ must remain ignored")
 
     for tool in (
         "tools/check-presets.py",
@@ -172,6 +175,9 @@ def main() -> None:
         "tools/check-source-release.py",
         "tools/check-native-evidence.py",
         "tools/parse-tester-stats.py",
+        "tools/Install-Commercial.ps1",
+        "tools/build-commercial-candidate.py",
+        "tools/check-commercial-candidate.py",
         "tools/release-audit.py",
     ):
         require(
@@ -182,6 +188,8 @@ def main() -> None:
     require(r"Tests\AurumQuantBrokerProbe.mq5" in read("tools/Compile-MQL5.ps1"), "compile helper must include broker probe")
     require(r"Tests\AurumQuantBrokerProbe.mq5" in read("tools/Install-MQL5.ps1"), "installer must include broker probe")
     require(r"passed=78\|failed=0" in read("tools/Collect-Native-Evidence.ps1"), "native evidence collector must enforce 78/0 validation")
+    require("compiled_ex5_included=$true" in read("tools/Collect-Native-Evidence.ps1"), "native evidence collector must bind compiled EX5")
+    require('"commercial_ready": False' in read("tools/build-commercial-candidate.py"), "commercial candidate must not claim final readiness")
     require(
         "source research preview" in readme.lower(),
         "README must retain research-preview status language",
