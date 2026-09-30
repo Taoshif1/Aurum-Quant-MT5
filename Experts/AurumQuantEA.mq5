@@ -185,15 +185,17 @@ void OnTick()
             else
             {
                bool live_ok=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_exposures,g_portfolio_used_percent,gate_reason);
+               bool request_accepted=false;
                if(live_ok)
                {
-                  AQTradeResult result;bool accepted=false;
-                  if(g_signal==BUY_CANDIDATE)accepted=g_trader.Buy(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
-                  else accepted=g_trader.Sell(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
-                  decision=accepted?"REQUEST ACCEPTED":"REQUEST REJECTED";why=result.description;
+                  AQTradeResult result;
+                  if(g_signal==BUY_CANDIDATE)request_accepted=g_trader.Buy(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
+                  else request_accepted=g_trader.Sell(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
+                  decision=request_accepted?"REQUEST ACCEPTED":"REQUEST REJECTED";why=result.description;
                }
                else {decision="CANDIDATE DISCARDED";why=gate_reason;g_risk_status=why;}
-               g_portfolio_lock.Release();
+               if(request_accepted)g_portfolio_lock.HoldUntilExpiry();
+               else g_portfolio_lock.Release();
             }
          }
          else decision="CANDIDATE ONLY - execution locked";

@@ -48,6 +48,12 @@ public:
       }
       reason="portfolio execution gate contention";return false;
    }
+   void HoldUntilExpiry()
+   {
+      // Keep the shared expiry value after an accepted broker request so other charts
+      // cannot race a temporarily stale terminal trade-state snapshot.
+      m_owned=false;m_value=0;
+   }
    void Release()
    {
       if(!m_owned)return;
