@@ -30,4 +30,12 @@ Break-even and trailing are separate, default-off features. Future break-even tr
 
 All position modification and close requests use the same execution policy as entries. The position manager starts in OBSERVE with its master lock off, including when initialized through its legacy two-argument interface. Account type is checked at every mutation. These checks are independent of future break-even or trailing feature switches.
 
-Tester baselines remain in memory to avoid contamination between passes. The guard is per symbol/magic and is not an account-wide portfolio limit.
+Tester baselines remain in memory to avoid contamination between passes. The daily guard remains per symbol/magic.
+
+## Portfolio guard
+
+Distributed presets reserve magic numbers 26093000–26093099 and each preset's MagicNumber must fall inside that range. Before a new candidate can reach TradeManager, PortfolioGuard scans every open position whose magic is inside the configured group. Each position must have a stop loss. OrderCalcProfit reprices the monetary P/L from its open price to its stop in account currency; negative values are summed as current stop risk and protected positions with non-negative stop P/L add zero risk.
+
+A candidate is rejected when existing stop risk plus its estimated stop loss would exceed MaxPortfolioRiskPercent of current account equity, or when the number of grouped positions has reached MaxPortfolioPositions. The supplied research presets use a 1.0% combined stop-risk cap and three-position cap. These are engineering defaults, not recommendations. Gaps, commission and slippage can make realized loss larger than stop-risk estimates.
+
+The check is deliberately fail-closed: unreadable position data, an Aurum-group position without SL, or an unpriceable stop blocks new entries. This revision does not yet atomically reserve risk across simultaneous cross-chart submissions, so native multi-chart concurrency testing remains a release gate.

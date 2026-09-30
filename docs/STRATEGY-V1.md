@@ -20,7 +20,7 @@ The owner authorized continued product implementation on 2026-09-30. This docume
 
 ## Operational defaults
 
-Gold and silver: weekdays only, broker-server session 07:00–20:00, USD high-impact news filter enabled. Bitcoin/Ethereum: no intraday session filter, weekends disabled unless explicitly enabled, news filter off. Forex: weekdays, USD calendar filter for the EURUSD example. No cross-symbol portfolio scheduler is provided. Independent charts can accumulate risk; per-trade and daily guards are per instance, not portfolio limits.
+Gold and silver: weekdays only, broker-server session 07:00–20:00, USD high-impact news filter enabled. Bitcoin/Ethereum: no intraday session filter, weekends disabled unless explicitly enabled, news filter off. Forex: weekdays, USD calendar filter for the EURUSD example. Independent charts share a cross-symbol portfolio guard through the reserved Aurum magic range. New candidates are blocked when combined stop risk or grouped position count reaches the configured portfolio cap. The daily guard remains per instance.
 
 Break-even and trailing remain unimplemented and default off. Enabling them fails initialization rather than silently pretending they work. There is no Friday automatic liquidation. Broker stops remain responsible for protection while disconnected. Existing positions are never automatically closed merely because a filter blocks new entries.
 

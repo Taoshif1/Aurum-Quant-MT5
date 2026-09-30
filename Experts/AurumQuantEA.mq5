@@ -1,5 +1,5 @@
 #property copyright "Aurum Quant MT5 research project"
-#property version   "1.200"
+#property version   "1.210"
 #property strict
 #property description "Multi-asset breakout/retest research EA. Unvalidated strategy."
 
@@ -16,6 +16,8 @@
 #include <AurumQuant/Risk/RiskManager.mqh>
 #include <AurumQuant/Risk/DailyGuard.mqh>
 #include <AurumQuant/Risk/PositionGuard.mqh>
+#include <AurumQuant/Risk/PortfolioBudget.mqh>
+#include <AurumQuant/Risk/PortfolioGuard.mqh>
 #include <AurumQuant/Risk/EntryLimits.mqh>
 #include <AurumQuant/Trading/OrderPlan.mqh>
 #include <AurumQuant/Filters/SpreadFilter.mqh>
@@ -62,6 +64,12 @@ input int ATRPeriod=14;
 input double ATRMultiplier=2.0;
 input double FixedStopPoints=0.0;
 
+input group "Portfolio risk guard"
+input ulong PortfolioMagicBase=26093000;
+input int PortfolioMagicSpan=100;
+input double MaxPortfolioRiskPercent=1.0;
+input int MaxPortfolioPositions=3;
+
 input group "Filters"
 input bool EnableSpreadFilter=true;
 input double MaxSpreadPoints=0.0;
@@ -89,6 +97,7 @@ AQTradeManager g_trader; AQPositionManager g_positions; AQDashboard g_dashboard;
 ENUM_TREND_STATE g_trend=TREND_DATA_NOT_READY; ENUM_SIGNAL_STATE g_signal=NO_SETUP; ENUM_NEWS_STATE g_news=NEWS_DISABLED;
 string g_critical="",g_spread_state="",g_session_state="",g_news_state="DISABLED",g_weekend_state="";
 double g_daily_loss=0; bool g_engine_ready=false,g_symbol_valid=false,g_trend_initialized=false,g_daily_initialized=false;
+double g_portfolio_risk=0,g_portfolio_used_percent=0;int g_portfolio_positions=0;
 bool g_paused=false;
 string g_risk_status="No candidate evaluated",g_last_decision="";
 datetime g_evaluation_bar=0,g_evaluation_time=0,g_last_news_check=0;
@@ -113,6 +122,8 @@ int OnInit()
    g_diagnostic.Check(g_strategy.Init(g_cfg.symbol,EntryTimeframe,EnableResearchStrategy,BreakoutLookback,ATRPeriod,BreakoutBufferATR,RetestToleranceATR,RetestTimeoutBars),"strategy/ATR initialization failed");
    g_diagnostic.Check(PeriodSeconds(EntryTimeframe)>0 && PeriodSeconds(TrendTimeframe)>0,"invalid timeframe");
    g_diagnostic.Check(RiskPercent>0 && RiskPercent<=100 && DailyLossLimitPercent>0 && DailyLossLimitPercent<=100 && MaxOpenPositions>=1 && RewardRiskRatio>0 && MathIsValidNumber(RewardRiskRatio),"invalid risk inputs");
+   g_diagnostic.Check(PortfolioMagicBase>0 && PortfolioMagicSpan>0 && AQPortfolioBudget::MagicInGroup(MagicNumber,PortfolioMagicBase,PortfolioMagicSpan),"MagicNumber is outside the Aurum portfolio magic range");
+   g_diagnostic.Check(MathIsValidNumber(MaxPortfolioRiskPercent) && MaxPortfolioRiskPercent>=RiskPercent && MaxPortfolioRiskPercent<=100 && MaxPortfolioPositions>=1,"invalid portfolio risk limits");
    g_diagnostic.Check(!EnableSpreadFilter || (MaxSpreadPoints>0 && MathIsValidNumber(MaxSpreadPoints)),"spread limit must be positive");
    g_diagnostic.Check(!EnableSessionFilter || (SessionStartHour>=0 && SessionStartHour<=23 && SessionEndHour>=0 && SessionEndHour<=23),"invalid session hours");
    g_diagnostic.Check(!EnableNewsFilter || (NewsMinutesBefore>=0 && NewsMinutesAfter>=0 && NewsCurrency!=""),"invalid news configuration");
@@ -138,26 +149,30 @@ void OnTick()
    bool session_ok=AQSessionFilter::Pass(EnableSessionFilter,SessionStartHour,SessionEndHour,g_session_state);bool weekend_ok=AQSessionFilter::WeekendPass(AllowWeekendTrading,g_weekend_state);
    datetime server=TimeTradeServer();if(g_last_news_check==0 || server-g_last_news_check>=60){g_news=AQNewsFilter::Evaluate(EnableNewsFilter,NewsMinutesBefore,NewsMinutesAfter,NewsCurrency,g_news_state);g_last_news_check=server;}
    bool news_ok=(g_news==NEWS_CLEAR || g_news==NEWS_DISABLED);string daily_reason="daily guard unavailable";bool daily_block=(!g_daily_initialized || g_daily.IsBlocked(g_daily_loss,daily_reason));
-   string position_reason;bool position_ok=AQPositionGuard::CanOpen(g_cfg.symbol,MagicNumber,MaxOpenPositions,position_reason);int tick_age=INT_MAX;bool fresh=g_symbol_valid && g_market.Fresh(MaxTickAgeSeconds,tick_age);datetime closed_bar=0;bool evaluated=false;
+   string position_reason;bool position_ok=AQPositionGuard::CanOpen(g_cfg.symbol,MagicNumber,MaxOpenPositions,position_reason);
+   string portfolio_reason;bool portfolio_ok=AQPortfolioGuard::CurrentWithinLimits(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,g_portfolio_risk,g_portfolio_positions,g_portfolio_used_percent,portfolio_reason);
+   int tick_age=INT_MAX;bool fresh=g_symbol_valid && g_market.Fresh(MaxTickAgeSeconds,tick_age);datetime closed_bar=0;bool evaluated=false;
    if(g_engine_ready && fresh && g_market.IsNewBar(closed_bar))
    {
       evaluated=true;g_evaluation_bar=closed_bar;g_evaluation_time=server;g_log.Event("NEW_BAR",StringFormat("tf=%s|closed_bar=%s",EnumToString(EntryTimeframe),TimeToString(closed_bar,TIME_DATE|TIME_MINUTES)));
       ENUM_TREND_STATE previous=g_trend;g_trend=g_trend_engine.Evaluate();if(previous!=g_trend)g_log.Event("TREND_CHANGE",AQTrendName(g_trend));g_signal=g_strategy.Evaluate(g_trend,closed_bar);
    }
    string blocked="";
-   if(!g_engine_ready || !g_symbol_valid)blocked=g_critical;else if(!fresh)blocked=StringFormat("market data stale (%d seconds)",tick_age);else if(!spread_ok)blocked=g_spread_state;else if(!session_ok)blocked="session filter";else if(!weekend_ok)blocked=g_weekend_state;else if(!news_ok)blocked=g_news_state;else if(daily_block)blocked=daily_reason;else if(!position_ok)blocked=position_reason;else if(g_trend==TREND_DATA_NOT_READY)blocked="trend data not ready";else if(g_signal==SIGNAL_BLOCKED)blocked="strategy data invalid or unavailable";
+   if(!g_engine_ready || !g_symbol_valid)blocked=g_critical;else if(!fresh)blocked=StringFormat("market data stale (%d seconds)",tick_age);else if(!spread_ok)blocked=g_spread_state;else if(!session_ok)blocked="session filter";else if(!weekend_ok)blocked=g_weekend_state;else if(!news_ok)blocked=g_news_state;else if(daily_block)blocked=daily_reason;else if(!position_ok)blocked=position_reason;else if(!portfolio_ok)blocked=portfolio_reason;else if(g_trend==TREND_DATA_NOT_READY)blocked="trend data not ready";else if(g_signal==SIGNAL_BLOCKED)blocked="strategy data invalid or unavailable";
    if(g_paused)blocked="entries paused by user";
    string decision=(blocked!=""?"BLOCKED":(EnableResearchStrategy?"WAIT - breakout/retest v1":"OBSERVATION - strategy disabled"));
    bool candidate=evaluated && (g_signal==BUY_CANDIDATE || g_signal==SELL_CANDIDATE);
+   if(!candidate)g_risk_status=(portfolio_ok?StringFormat("Portfolio risk %.2f%% / %.2f%% | positions %d/%d",g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_positions,MaxPortfolioPositions):portfolio_reason);
    if(candidate)
    {
       string why=blocked;AQOrderPlan plan;
       bool ready=why=="";
       if(ready)ready=AQEntryLimits::Pass(g_cfg.symbol,MagicNumber,MaxEntriesPerDay,CooldownBars,EntryTimeframe,why);
       if(ready)ready=AQOrderPlanner::Build(g_spec,g_signal==BUY_CANDIDATE?AQ_BUY:AQ_SELL,g_strategy.ATR(),ATRMultiplier,RewardRiskRatio,RiskPercent,plan,why);
+      if(ready)ready=AQPortfolioGuard::CanAdd(PortfolioMagicBase,PortfolioMagicSpan,MaxPortfolioPositions,MaxPortfolioRiskPercent,plan.estimated_loss,g_portfolio_risk,g_portfolio_positions,g_portfolio_used_percent,why);
       if(ready)
       {
-         g_risk_status=StringFormat("%.8f lots | estimated SL loss %.2f | margin %.2f",plan.volume,plan.estimated_loss,plan.margin);
+         g_risk_status=StringFormat("%.8f lots | estimated SL loss %.2f | margin %.2f | portfolio after candidate %.2f%% / %.2f%% | positions %d/%d",plan.volume,plan.estimated_loss,plan.margin,g_portfolio_used_percent,MaxPortfolioRiskPercent,g_portfolio_positions,MaxPortfolioPositions);
          g_log.Event("CANDIDATE",StringFormat("direction=%s|bar=%I64d|entry=%g|sl=%g|tp=%g|volume=%.8f",g_signal==BUY_CANDIDATE?"BUY":"SELL",(long)closed_bar,plan.entry,plan.sl,plan.tp,plan.volume));
          if(g_trader.ExecutionAllowed(why))
          {
