@@ -22,6 +22,8 @@ EXACT_FILES = (
     Path("tools/Install-MQL5.ps1"),
     Path("tools/Install-Commercial.ps1"),
     Path("tools/Collect-Native-Evidence.ps1"),
+    Path("tools/Collect-Support-Bundle.ps1"),
+    Path("tools/check-support-bundle.py"),
     Path("tools/check-presets.py"),
     Path("tools/build-source-release.py"),
     Path("tools/check-source-release.py"),

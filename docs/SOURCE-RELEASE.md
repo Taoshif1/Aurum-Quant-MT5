@@ -30,8 +30,8 @@ The source bundle includes:
 - `Tests/AurumQuantValidation.mq5` and `Tests/AurumQuantBrokerProbe.mq5`
 - user-facing `docs/*.md`
 - `README.md`
-- the PowerShell source install, compiled-candidate install, official-MetaEditor compile, and native-evidence collection helpers
-- preset validation, native-evidence verification, Strategy Tester metric parsing, commercial-candidate build/verification, plus source-package build/verification Python tools
+- the PowerShell source install, compiled-candidate install, official-MetaEditor compile, native-evidence collection, and privacy-safe support collection helpers
+- preset validation, native-evidence verification, Strategy Tester metric parsing, commercial-candidate build/verification, support-bundle privacy verification, plus source-package build/verification Python tools
 
 It deliberately excludes Git metadata, GitHub workflow files, portable test shims, `AGENTS.md`, local build output and compiled `.ex5` files.
 

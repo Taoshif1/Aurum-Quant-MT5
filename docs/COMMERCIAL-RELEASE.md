@@ -34,6 +34,6 @@ The candidate ZIP therefore proves binary provenance and packaging integrity, no
 
 ## Final gates still required
 
-Before a sales release, record broker/demo compatibility, real-tick historical methodology, untouched out-of-sample results, demo forward operation, support policy, license/activation design, privacy handling, refund/terms review, and signing/distribution procedure. Any performance statement must be based on the exact released binary and documented test population/period/cost assumptions.
+Before a sales release, record broker/demo compatibility, real-tick historical methodology, untouched out-of-sample results, demo forward operation, support policy, license/activation design, privacy handling, refund/terms review, and signing/distribution procedure. The repository now provides privacy-safe support diagnostics, but the actual support SLA, escalation path, refund rules, and contact channel still require a business decision. Any performance statement must be based on the exact released binary and documented test population/period/cost assumptions.
 
 Do not rename a candidate ZIP to imply final readiness. Promotion to a sales release needs a separate gated process.

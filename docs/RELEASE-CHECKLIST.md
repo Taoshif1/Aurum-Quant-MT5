@@ -21,6 +21,7 @@ A price target is not a quality metric. This source preview must not be marketed
 | Historical real-tick testing | Pending; no performance data claimed |
 | Out-of-sample and demo forward tests | Pending |
 | Compiled EX5 candidate distribution | Gated builder/verifier implemented. It can only package EX5 copies from verified same-commit native evidence and keeps `commercial_ready=false`; no real candidate can be produced in this environment until native evidence exists |
+| Customer support diagnostics | Privacy-safe local support collector/verifier implemented; raw MT5 login IDs and terminal paths are excluded, logs are restricted to `AURUM|` lines, and secret-like preset fields are redacted before sharing |
 
 ## Native validation matrix
 
@@ -32,4 +33,4 @@ Use real ticks where available, realistic costs, held-out dates and multiple mar
 
 ## Explicitly unfinished product capabilities
 
-Swing trailing, license/activation enforcement, code signing, final sales installer signing, storefront delivery, performance acceptance criteria, and customer support policy are not implemented. The deterministic CI source artifact is not a substitute for those release capabilities. Unsupported trailing methods fail initialization rather than silently degrading. Production support requires broker reports and a native test environment.
+Swing trailing, license/activation enforcement, code signing, final sales installer signing, storefront delivery, performance acceptance criteria, and customer support SLA/refund/response policy are not implemented. The deterministic CI source artifact is not a substitute for those release capabilities. Unsupported trailing methods fail initialization rather than silently degrading. Production support requires broker reports and a native test environment.
