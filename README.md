@@ -13,7 +13,7 @@ An MQL5 Expert Advisor for broker-provided gold, silver, Bitcoin, Ethereum, fore
 - Duplicate request identity persisted across terminal restarts; no per-tick retries after a rejected candidate.
 - Optional break-even management by original R or fixed distance, plus fixed-distance, closed-ATR, or original-R trailing. Stop changes only tighten owned positions and still pass the same execution and broker stop/freeze gates.
 - On-chart status and pause/resume button for new entries. Entry pause does not disable already-enabled position protection.
-- Six OBSERVE presets, source installer with backups, compile helper and portable regression CI.
+- Six OBSERVE presets, source installer with backups, compile helper, portable regression CI, and a deterministic checksummed source-release bundle.
 
 OBSERVE and a separate submission lock are enforced inside entry and position-mutation boundaries. Presets enable research signals while keeping `OperatingMode=0` and `EnableOrderSubmission=false`. No exchange API, martingale, grid averaging or optimization is implemented. No profitability claim is made.
 
@@ -45,7 +45,19 @@ The installer backs up existing project files and copies source, includes, the v
 | EURUSD-Research.set | EUR/USD | Forex | Enabled / enabled |
 | Generic-Research.set | Other broker instrument | Generic | Disabled / disabled |
 
-All presets use 0.25% nominal risk per proposed trade, a three-entry daily cap and a four-bar cooldown. These are unvalidated research defaults, not recommendations. The presets reserve magic range 26093000–26093099 and share a 1.0% maximum stop-risk budget with a three-position portfolio cap. The daily guard remains per symbol/magic.
+All presets use 0.25% nominal risk per proposed trade, a three-entry daily cap and a four-bar cooldown. These are unvalidated research defaults, not recommendations. The presets reserve magic range 26093000–26093099 and share a 1.0% maximum stop-risk budget with a three-exposure portfolio cap. The daily guard remains per symbol/magic.
+
+## Research source bundle
+
+Build and independently verify the deterministic source handoff with:
+
+```sh
+python3 tools/check-presets.py
+python3 tools/build-source-release.py
+python3 tools/check-source-release.py
+```
+
+Outputs go to ignored `dist/`: a versioned source ZIP, JSON manifest, and ZIP SHA-256 file. GitHub Actions rebuilds the ZIP twice, requires byte-identical output, verifies the manifest and hashes, then uploads the research source bundle as a 14-day run artifact. This is **source packaging only**. It is not an EX5 build, signed installer, broker certification, or profitability evidence. See [source release packaging](docs/SOURCE-RELEASE.md).
 
 ## Portable regression checks
 
