@@ -13,6 +13,7 @@ public:
       passed=0;failed=0;AQStopProposal p;
       Check(AQStopManagementPolicy::Build(AQ_BUY,100,110,90,10,0.1,0.1,true,BE_BY_R,1,0,false,TRAIL_FIXED,0,0,p)&&p.change&&Near(p.stop,100),passed,failed);
       Check(AQStopManagementPolicy::Build(AQ_BUY,100,109,90,10,0.1,0.1,true,BE_BY_R,1,0,false,TRAIL_FIXED,0,0,p)&&!p.change,passed,failed);
+      Check(AQStopManagementPolicy::Build(AQ_BUY,100,105,95,10,0.1,0.1,true,BE_BY_R,1,0,false,TRAIL_FIXED,0,0,p)&&!p.change,passed,failed);
       Check(AQStopManagementPolicy::Build(AQ_SELL,100,90,110,10,0.1,0.1,true,BE_BY_R,1,0,false,TRAIL_FIXED,0,0,p)&&p.change&&Near(p.stop,100),passed,failed);
       Check(AQStopManagementPolicy::Build(AQ_BUY,100,105,90,10,0.1,0.1,true,BE_BY_DISTANCE,1,50,false,TRAIL_FIXED,0,0,p)&&p.change&&Near(p.stop,100),passed,failed);
       Check(AQStopManagementPolicy::Build(AQ_BUY,100,110,90,10,0.1,0.1,false,BE_BY_R,1,0,true,TRAIL_FIXED,20,0,p)&&p.change&&Near(p.stop,108),passed,failed);
