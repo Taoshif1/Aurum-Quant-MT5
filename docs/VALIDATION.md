@@ -2,7 +2,7 @@
 
 ## Compilation gate
 
-Use only official MetaEditor. `tools/Compile-MQL5.ps1` stages the installed official standard library under ignored `.build/` and compiles the EA and deterministic test script. Both logs must end in `Result: 0 errors, 0 warnings`.
+Use only official MetaEditor. `tools/Compile-MQL5.ps1` stages the installed official standard library under ignored `.build/` and compiles the EA, deterministic validation script, and broker-probe script. All three logs must end in `Result: 0 errors, 0 warnings`.
 
 ## Initialization checklist
 
@@ -37,3 +37,18 @@ Run the C++ command in README. This is a logic regression check, **not** an MQL 
 The shared strategy suite adds 15 assertions for both directions, duplicate timestamps, timeout, wrong-side cancellation, trend change and invalid OHLC/ATR. Six portfolio-budget assertions cover magic grouping, exact-cap behavior, excess risk and position limits. Four lock-policy assertions cover free, exact-expiry, future-held and invalid lock states. Sixteen position-management assertions cover BUY/SELL break-even, original-risk persistence semantics, distance triggers, fixed/ATR trailing, tighten-only precedence and unsupported-method rejection. Portable order-plan cases test successful BUY/SELL plans and rejection for missing profit/margin calculations, insufficient free margin, zero ATR and a budget below minimum lot. Six preset files must match all 48 actual EA input names, have distinct magic numbers, and retain OBSERVE/submission-off locks.
 
 The Linux CI additionally builds and independently verifies the deterministic research source bundle, including exact file membership, SHA-256 values, safe execution metadata and reproducible ZIP bytes. This does not compile MQL. Windows installer and compile-helper execution are pending in this environment, and no v1.24 `.ex5` or official compiler result is supplied.
+
+
+## Native evidence bundle
+
+After native compilation, run `AurumQuantValidation` and require `AURUM|SELF_TEST|RESULT|passed=78|failed=0`. Run `AurumQuantBrokerProbe` using the exact broker symbol names under test. Then execute:
+
+```powershell
+.\tools\Collect-Native-Evidence.ps1 `
+  -TerminalData 'YOUR_MT5_DATA_FOLDER' `
+  -ValidationJournal 'PATH_TO_EXPERTS_OR_SCRIPT_JOURNAL.log' `
+  -TesterReport 'OPTIONAL_TESTER_REPORT.html' `
+  -TesterJournal 'OPTIONAL_TESTER_JOURNAL.log'
+```
+
+The collector refuses missing/dirty compile logs, a journal without the exact 78/0 result, an empty broker probe, or any probe row with `status != OK`. It copies the evidence into an ignored timestamped folder, hashes each file with SHA-256, and writes `evidence-manifest.json`. Optional tester artifacts are recorded explicitly as present/absent; their absence does not convert a compile/self-test evidence bundle into a smoke/backtest pass.

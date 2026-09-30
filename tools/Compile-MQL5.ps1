@@ -11,7 +11,7 @@ if(!(Test-Path -LiteralPath (Join-Path $standard 'Trade\Trade.mqh'))){throw 'Off
 New-Item -ItemType Directory -Path (Join-Path $stage 'Include\AurumQuant') -Force | Out-Null
 Copy-Item -Path (Join-Path $standard '*') -Destination (Join-Path $stage 'Include') -Recurse -Force
 Copy-Item -Path (Join-Path $repo 'Include\AurumQuant\*') -Destination (Join-Path $stage 'Include\AurumQuant') -Recurse -Force
-$targets=@('Experts\AurumQuantEA.mq5','Tests\AurumQuantValidation.mq5')
+$targets=@('Experts\AurumQuantEA.mq5','Tests\AurumQuantValidation.mq5','Tests\AurumQuantBrokerProbe.mq5')
 foreach($relative in $targets){
  $source=Join-Path $repo $relative
  $log=Join-Path $repo ('.build\'+[IO.Path]::GetFileNameWithoutExtension($source)+'.log')

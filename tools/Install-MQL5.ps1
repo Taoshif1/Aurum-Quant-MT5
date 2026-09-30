@@ -10,6 +10,7 @@ $items=@(
  @{Source='Experts\AurumQuantEA.mq5';Target='Experts\AurumQuantEA.mq5'},
  @{Source='Include\AurumQuant';Target='Include\AurumQuant'},
  @{Source='Tests\AurumQuantValidation.mq5';Target='Scripts\AurumQuantValidation.mq5'},
+ @{Source='Tests\AurumQuantBrokerProbe.mq5';Target='Scripts\AurumQuantBrokerProbe.mq5'},
  @{Source='Presets';Target='Presets\AurumQuant'}
 )
 foreach($item in $items){
@@ -27,4 +28,4 @@ foreach($item in $items){
  }else{Copy-Item -LiteralPath $source -Destination $target -Force}
 }
 Write-Output "Source installed. Existing files backed up under $backup."
-Write-Output 'Compile the installed EA and validation script in MetaEditor. Load an OBSERVE preset before attaching.'
+Write-Output 'Compile the installed EA, validation script, and broker probe in MetaEditor. Load an OBSERVE preset before attaching.'

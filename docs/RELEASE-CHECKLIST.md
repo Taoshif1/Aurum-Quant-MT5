@@ -15,6 +15,7 @@ A price target is not a quality metric. This source preview must not be marketed
 | Official MetaEditor compilation | Pending for v1.24; require zero errors and warnings for EA and validation script |
 | Native self-test | Pending; require passed=78 and failed=0 |
 | Windows install/compile tools | Written; execution on Windows pending |
+| Native evidence capture | Broker probe and PowerShell collector implemented; collector requires three clean compiler logs, native 78/0 validation output, and all-OK broker rows before producing a checksummed evidence manifest |
 | Broker integration | Pending for each intended broker and account mode |
 | Historical real-tick testing | Pending; no performance data claimed |
 | Out-of-sample and demo forward tests | Pending |
@@ -22,7 +23,7 @@ A price target is not a quality metric. This source preview must not be marketed
 
 ## Native validation matrix
 
-For each target broker, record symbol name/suffix, account currency, contract size, tick size/value, min/max/step lot, stop/freeze levels and execution mode. Test gold, silver and Bitcoin separately. Additional EURUSD/Ethereum presets require their own evidence.
+For each target broker, run `AurumQuantBrokerProbe` and retain its CSV. It records symbol name/suffix, account currency, contract size, tick size/value, min/max/step lot, stop/freeze levels, symbol trade mode, account trade/margin mode, leverage, server/company and terminal build. Test gold, silver and Bitcoin separately. Additional EURUSD/Ethereum presets require their own evidence.
 
 Test locked OBSERVE even with the master switch requested; demo-account mismatch; minimum-lot rejection; excessive spread; disabled algorithmic trading; unavailable news/history; netting conflict; cooldown/daily cap; rejected requests; reconnect/history gaps; terminal restart and duplicate signal identity. Confirm stop and target were actually attached to each filled demo position. Check manual/other-EA exposure is not altered.
 
