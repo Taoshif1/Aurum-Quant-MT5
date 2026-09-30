@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Share execution locks across entry, position modification, and position closing.
+- Correct fractional lot-step precision and cap-before-floor volume normalization.
+- Reject non-finite numeric inputs, unknown directions, and unsupported normalization precision.
+- Extend deterministic MQL assertions from 23 to 37 and add portable production-header regression checks.
+- Portable regression checks passed; native MetaEditor compilation and MT5 execution are pending.
+
 ## 1.1.0 — 2026-08-30
 
 - Compiled with official MetaEditor build 6140 at zero errors and warnings.

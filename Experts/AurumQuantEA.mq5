@@ -102,7 +102,7 @@ int OnInit()
    g_symbol_valid=AQSymbolProfile::Load(g_cfg.symbol,g_spec);g_diagnostic.Check(g_symbol_valid,"SYMBOL DATA INVALID: "+g_spec.error);
    if(g_symbol_valid){g_trend_initialized=g_trend_engine.Init(g_cfg.symbol,g_cfg.trend_tf,FastEMAPeriod,SlowEMAPeriod);g_diagnostic.Check(g_trend_initialized,"indicator handles unavailable");}
    string daily_reason="symbol invalid";if(g_symbol_valid)g_daily_initialized=g_daily.Init(g_cfg.symbol,MagicNumber,DailyLossLimitPercent,daily_reason);g_diagnostic.Check(g_daily_initialized,"daily guard: "+daily_reason);
-   g_market.Init(g_cfg.symbol,g_cfg.entry_tf);g_trader.Init(OperatingMode,EnableOrderSubmission,MagicNumber,g_cfg.symbol);g_positions.Init(MagicNumber,g_cfg.symbol);
+   g_market.Init(g_cfg.symbol,g_cfg.entry_tf);g_trader.Init(OperatingMode,EnableOrderSubmission,MagicNumber,g_cfg.symbol);g_positions.Init(MagicNumber,g_cfg.symbol,OperatingMode,EnableOrderSubmission);
    string execution_reason;bool execution_allowed=g_trader.ExecutionAllowed(execution_reason);g_diagnostic.Check(!(OperatingMode==MODE_OBSERVE && execution_allowed),"OBSERVE execution assertion failed");
    if(g_symbol_valid)g_log.Event("SYMBOL_VALID",StringFormat("digits=%d point=%g tick_size=%g tick_value_loss=%g contract=%g volume=[%g,%g] step=%g stops=%d freeze=%d mode=%d",g_spec.digits,g_spec.point,g_spec.tick_size,g_spec.tick_value_loss,g_spec.contract_size,g_spec.volume_min,g_spec.volume_max,g_spec.volume_step,g_spec.stops_level,g_spec.freeze_level,g_spec.trade_mode));
    g_engine_ready=g_diagnostic.Ready();g_critical=(g_engine_ready?"":g_diagnostic.Reasons());g_log.Event("SELF_DIAGNOSTIC",g_engine_ready?"READY":"BLOCKED: "+g_critical);g_log.Event("SAFETY",execution_reason);

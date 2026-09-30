@@ -8,7 +8,7 @@ The research default is 1% per proposed trade, configurable and not a recommenda
 
 `raw volume = cash risk / loss per lot`
 
-Volume is rounded down on the broker grid anchored at minimum volume and capped at maximum. It is never rounded upward into added risk. Prices are rounded to the nearest broker tick size and then to broker digits. Invalid point, digits, tick size/value, contract economics, volume grid, distances, equity, trading mode, or normalization produces no trade. No cross-asset lot equivalence is assumed.
+Volume is capped at the broker maximum before rounding down on the grid anchored at minimum volume. This avoids returning an off-grid maximum. Eight-decimal normalization preserves fractional steps such as 0.25 and 0.125; unsupported finer grids fail closed. Floating-point tolerance is at most 1e-12 lots. It is never rounded upward into added risk. Prices are rounded to the nearest broker tick size and then to broker digits. Invalid point, digits, tick size/value, contract economics, volume grid, distances, equity, trading mode, or normalization produces no trade. No cross-asset lot equivalence is assumed.
 
 Directional stop validation uses Bid for BUY protection and Ask for SELL protection. BUY requires SL below Bid and TP above Bid; SELL is inverse. New orders honor `SYMBOL_TRADE_STOPS_LEVEL`. Modifications honor the larger of stop and freeze levels. Prices not aligned to tick size are blocked before submission.
 
@@ -29,3 +29,5 @@ Positions are counted only when both symbol and magic number match. Manual and o
 Deterministic cases are in `Tests/AurumQuantValidation.mq5`: equity/risk/SL variations, invalid and zero economics, below-minimum and above-maximum volume, unusual steps, price alignment, directional/freeze stops, profit/small loss/exact/exceeded daily loss, new day, same-day restart identity, OBSERVE, and LIVE-with-lock-off.
 
 Break-even and trailing are separate, default-off features. Future break-even triggers may use R or distance; trailing may use fixed, ATR, swing, or R methods. If both are later enabled, the approved precedence must only tighten risk, never loosen a stop. Spread, commission, slippage, and minimum stop/freeze distance can make nominal break-even economically negative.
+
+All position modification and close requests use the same execution policy as entries. The position manager starts in OBSERVE with its master lock off, including when initialized through its legacy two-argument interface. Account type is checked at every mutation. These checks are independent of future break-even or trailing feature switches.
