@@ -10,8 +10,9 @@ A price target is not a quality metric. This source preview must not be marketed
 | Presets | Six files match all 48 EA inputs, share one reserved portfolio magic range, and retain OBSERVE/submission-off |
 | Portfolio risk guard | Implemented source-side: combined SL risk and exposure count include grouped open positions and active orders; missing-SL exposures fail closed |
 | Cross-chart execution serialization | Implemented source-side with an atomic terminal Global Variable mutex, final risk recheck before synchronous submission, and post-acceptance settlement hold; native multi-chart stress testing pending |
+| Position management | Break-even by original R/distance and fixed/closed-ATR trailing implemented source-side; stop proposals are tighten-only and ownership scoped; native broker modification tests pending |
 | Official MetaEditor compilation | Pending for v1.2; require zero errors and warnings for EA and validation script |
-| Native self-test | Pending; require passed=62 and failed=0 |
+| Native self-test | Pending; require passed=76 and failed=0 |
 | Windows install/compile tools | Written; execution on Windows pending |
 | Broker integration | Pending for each intended broker and account mode |
 | Historical real-tick testing | Pending; no performance data claimed |
@@ -28,4 +29,4 @@ Use real ticks where available, realistic costs, held-out dates and multiple mar
 
 ## Explicitly unfinished product capabilities
 
-Break-even/trailing automation, licensing, signed installers and storefront delivery are not implemented. Their inputs/features are not represented as working. Invalid attempts to enable the existing break-even/trailing placeholders block initialization. Production support requires broker reports and a native test environment.
+Swing and R-based trailing, licensing, signed installers and storefront delivery are not implemented. Unsupported trailing methods fail initialization rather than silently degrading. Production support requires broker reports and a native test environment.
