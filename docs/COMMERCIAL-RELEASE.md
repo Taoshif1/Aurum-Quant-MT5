@@ -30,7 +30,7 @@ A candidate manifest keeps these declarations false until separate evidence exis
 - `code_signing_complete`
 - `commercial_ready`
 
-The candidate ZIP therefore proves binary provenance and packaging integrity, not profitability or legal/commercial completeness. v1.25 has a client-side licensing boundary, but `license_enforcement_complete` remains false until the remote service, license records/admin workflow, deployment, and native MT5 activation tests exist.
+The candidate ZIP therefore proves binary provenance and packaging integrity, not profitability or legal/commercial completeness. v1.25 has both client-side licensing and a source-complete Supabase validation service. `license_enforcement_complete` remains false until that service is deployed to a dedicated Aurum project, an issuance/revocation administration workflow exists, and native MT5 activation/expiry/revocation/rate-limit tests pass.
 
 ## Final gates still required
 

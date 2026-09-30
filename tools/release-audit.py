@@ -166,6 +166,9 @@ def main() -> None:
     require("python3 tools/build-commercial-candidate.py --self-test" in workflow, "CI commercial candidate builder fail-closed test missing")
     require("python3 tools/check-commercial-candidate.py --self-test" in workflow, "CI commercial candidate verifier self-test missing")
     require("python3 tools/check-support-bundle.py --self-test" in workflow, "CI support-bundle privacy self-test missing")
+    require("python3 tools/check-license-service.py" in workflow, "CI license-service security check missing")
+    require("denoland/setup-deno@v2" in workflow and "deno-version: v2.9.7" in workflow, "CI Deno version is not pinned")
+    require("deno task check" in workflow and "deno task test" in workflow, "CI Edge Function check/test missing")
     require("dist/" in gitignore.splitlines(), "generated dist/ must remain ignored")
     require("evidence/" in gitignore.splitlines(), "generated evidence/ must remain ignored")
     require("dist-commercial/" in gitignore.splitlines(), "generated dist-commercial/ must remain ignored")
@@ -181,6 +184,8 @@ def main() -> None:
         "tools/Install-Commercial.ps1",
         "tools/build-commercial-candidate.py",
         "tools/check-commercial-candidate.py",
+        "tools/generate-license-key.py",
+        "tools/check-license-service.py",
         "tools/Collect-Support-Bundle.ps1",
         "tools/check-support-bundle.py",
         "tools/release-audit.py",
@@ -197,6 +202,14 @@ def main() -> None:
     require('"commercial_ready": False' in read("tools/build-commercial-candidate.py"), "commercial candidate must not claim final readiness")
     require('"license_client_boundary_complete": True' in read("tools/build-commercial-candidate.py"), "commercial candidate must declare license client boundary")
     require('"license_enforcement_complete": False' in read("tools/build-commercial-candidate.py"), "commercial candidate must not claim deployed license enforcement")
+    require('"license_service_source_complete": True' in read("tools/build-commercial-candidate.py"), "commercial candidate must declare license service source state")
+    license_schema = read("commercial/license-service/schema.sql")
+    require("security invoker" in license_schema.lower(), "license validation RPC must be security invoker")
+    require("from public, anon, authenticated" in license_schema.lower(), "license tables/functions must revoke public client access")
+    require("for update;" in license_schema.lower(), "license activation count must serialize on the license row")
+    edge_function = read("supabase/functions/aurum-license/index.ts")
+    require("SUPABASE_SECRET_KEYS" in edge_function, "license Edge Function must use server secret keys")
+    require("account_login" not in edge_function, "license Edge Function must not receive raw MT5 login")
     license_client = read("Include/AurumQuant/Commercial/LicenseClient.mqh")
     require('StartsWith(endpoint,"https://")' in license_client, "license client must require HTTPS")
     require("CRYPT_HASH_SHA256" in license_client, "license client must hash the account fingerprint")

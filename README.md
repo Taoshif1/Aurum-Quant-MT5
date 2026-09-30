@@ -89,7 +89,7 @@ See [support diagnostics and privacy](docs/SUPPORT.md).
 
 v1.25 adds a disabled-by-default license client for future paid builds. When enabled, it requires an HTTPS endpoint and sends the entered license key plus a SHA-256 account fingerprint rather than the raw MT5 login. A missing, invalid, expired, or unavailable activation blocks **new DEMO/LIVE entries only**. OBSERVE remains usable, and break-even/trailing protection for already-open positions is not license-gated.
 
-MT5 requires customers to allow-list the license URL for `WebRequest`; WebRequest is unavailable in Strategy Tester. The backend service itself is not deployed yet, so `license_enforcement_complete` remains false. See [licensing architecture](docs/LICENSING.md).
+MT5 requires customers to allow-list the license URL for `WebRequest`; WebRequest is unavailable in Strategy Tester. The Supabase schema/Edge Function service is now implemented and CI type-checked, but it is **not deployed**. A dedicated Aurum project plus native activation tests are still required, so `license_enforcement_complete` remains false. See [licensing architecture](docs/LICENSING.md) and [license service](docs/LICENSE-SERVICE.md).
 
 ## Portable regression checks
 

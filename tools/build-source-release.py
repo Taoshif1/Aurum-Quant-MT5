@@ -31,12 +31,17 @@ EXACT_FILES = (
     Path("tools/parse-tester-stats.py"),
     Path("tools/build-commercial-candidate.py"),
     Path("tools/check-commercial-candidate.py"),
+    Path("tools/generate-license-key.py"),
+    Path("tools/check-license-service.py"),
     Path("tools/release-audit.py"),
 )
 GLOBS = (
     "Include/AurumQuant/**/*.mqh",
     "Presets/*.set",
     "docs/*.md",
+    "commercial/license-service/*.sql",
+    "supabase/functions/aurum-license/*.ts",
+    "supabase/functions/aurum-license/*.json",
 )
 FORBIDDEN_SUFFIXES = {".ex5", ".env", ".key", ".pfx", ".p12"}
 FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)

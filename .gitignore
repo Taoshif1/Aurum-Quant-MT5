@@ -12,3 +12,5 @@ dist/
 evidence/
 dist-commercial/
 support/
+supabase/functions/.env
+supabase/functions/.env.*
