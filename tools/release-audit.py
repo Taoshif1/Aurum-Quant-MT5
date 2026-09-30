@@ -150,6 +150,7 @@ def main() -> None:
     require("actions/checkout@v7" in workflow, "CI must use current checkout v7")
     require("actions/upload-artifact@v7" in workflow, "CI must use current upload-artifact v7")
     require("python3 tools/check-presets.py" in workflow, "CI preset safety gate missing")
+    require("python3 tools/release-audit.py" in workflow, "CI release audit gate missing")
     require("python3 tools/build-source-release.py" in workflow, "CI source build gate missing")
     require("python3 tools/check-source-release.py" in workflow, "CI source verification gate missing")
     require("dist/" in gitignore.splitlines(), "generated dist/ must remain ignored")
