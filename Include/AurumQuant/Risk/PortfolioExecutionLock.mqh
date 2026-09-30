@@ -16,9 +16,16 @@ public:
       if(m_tester){m_ready=true;reason="OK";return true;}
       m_key=StringFormat("AQL.%I64d.%I64u.%d",AccountInfoInteger(ACCOUNT_LOGIN),magic_base,magic_span);
       if(m_key=="" || StringLen(m_key)>63) {reason="portfolio execution-lock key invalid";return false;}
-      if(!GlobalVariableTemp(m_key)) {reason="cannot initialize portfolio execution lock";return false;}
-      double current=GlobalVariableGet(m_key);
-      if(!MathIsValidNumber(current) || current<0) {reason="portfolio execution lock contains invalid state";return false;}
+      // Multiple charts share one terminal variable. Race-safe creation: another chart may create it
+      // between Check and Temp, which is acceptable as long as the variable exists afterwards.
+      if(!GlobalVariableCheck(m_key))
+      {
+         if(!GlobalVariableTemp(m_key) && !GlobalVariableCheck(m_key))
+         {reason="cannot initialize portfolio execution lock";return false;}
+      }
+      double current=0;
+      if(!GlobalVariableGet(m_key,current) || !MathIsValidNumber(current) || current<0)
+      {reason="portfolio execution lock contains invalid state";return false;}
       m_ready=true;reason="OK";return true;
    }
    bool Acquire(int ttl_seconds,string &reason)
