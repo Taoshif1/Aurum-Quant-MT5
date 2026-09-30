@@ -19,6 +19,8 @@ jobs:
         run: /tmp/aurum-regression
       - name: Verify preset safety and inputs
         run: python3 tools/check-presets.py
+      - name: Audit release metadata and safety claims
+        run: python3 tools/release-audit.py
       - name: Build deterministic source release
         run: python3 tools/build-source-release.py
       - name: Verify source release
