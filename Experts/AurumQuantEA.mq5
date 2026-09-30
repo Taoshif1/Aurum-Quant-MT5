@@ -1,5 +1,5 @@
 #property copyright "Aurum Quant MT5 research project"
-#property version   "1.230"
+#property version   "1.240"
 #property strict
 #property description "Multi-asset breakout/retest research EA. Unvalidated strategy."
 
@@ -123,8 +123,8 @@ int OnInit()
       (BreakEvenMethod==BE_BY_DISTANCE && MathIsValidNumber(BreakEvenDistancePoints) && BreakEvenDistancePoints>0),
       "invalid break-even configuration");
    g_diagnostic.Check(!EnableTrailingStop ||
-      ((TrailingMethod==TRAIL_FIXED || TrailingMethod==TRAIL_ATR) && MathIsValidNumber(TrailingValue) && TrailingValue>0),
-      "trailing v1 supports only positive FIXED or ATR distance");
+      ((TrailingMethod==TRAIL_FIXED || TrailingMethod==TRAIL_ATR || TrailingMethod==TRAIL_R) && MathIsValidNumber(TrailingValue) && TrailingValue>0),
+      "trailing v1 supports positive FIXED, ATR or R distance");
    g_diagnostic.Check(!EnableResearchStrategy || (StopLossModel==SL_ATR && ATRMultiplier>0 && MathIsValidNumber(ATRMultiplier)),"v1 requires a positive ATR stop model");
    g_diagnostic.Check(MaxEntriesPerDay>=1 && CooldownBars>=0,"invalid entry frequency limits");
    g_diagnostic.Check(g_strategy.Init(g_cfg.symbol,EntryTimeframe,EnableResearchStrategy,BreakoutLookback,ATRPeriod,BreakoutBufferATR,RetestToleranceATR,RetestTimeoutBars),"strategy/ATR initialization failed");

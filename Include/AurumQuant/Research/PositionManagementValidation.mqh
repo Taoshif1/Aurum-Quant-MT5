@@ -22,7 +22,9 @@ public:
       Check(AQStopManagementPolicy::Build(AQ_BUY,100,110,90,10,0.1,0.1,true,BE_BY_R,1,0,true,TRAIL_FIXED,20,0,p)&&p.change&&Near(p.stop,108),passed,failed);
       Check(AQStopManagementPolicy::Build(AQ_BUY,100,110,109,10,0.1,0.1,false,BE_BY_R,1,0,true,TRAIL_FIXED,20,0,p)&&!p.change&&Near(p.stop,109),passed,failed);
       Check(!AQStopManagementPolicy::Build(AQ_BUY,100,110,90,10,0.1,0.1,false,BE_BY_R,1,0,true,TRAIL_SWING,2,0,p),passed,failed);
-      Check(!AQStopManagementPolicy::Build(AQ_BUY,100,110,90,10,0.1,0.1,false,BE_BY_R,1,0,true,TRAIL_R,2,0,p),passed,failed);
+      Check(AQStopManagementPolicy::Build(AQ_BUY,100,120,90,10,0.1,0.1,false,BE_BY_R,1,0,true,TRAIL_R,1,0,p)&&p.change&&Near(p.stop,110),passed,failed);
+      Check(AQStopManagementPolicy::Build(AQ_SELL,100,80,110,10,0.1,0.1,false,BE_BY_R,1,0,true,TRAIL_R,1,0,p)&&p.change&&Near(p.stop,90),passed,failed);
+      Check(!AQStopManagementPolicy::Build(AQ_BUY,100,120,90,0,0.1,0.1,false,BE_BY_R,1,0,true,TRAIL_R,1,0,p),passed,failed);
       Check(!AQStopManagementPolicy::Build(AQ_BUY,100,110,90,10,0.1,0.1,false,BE_BY_R,1,0,true,TRAIL_FIXED,0,0,p),passed,failed);
       Check(!AQStopManagementPolicy::Build(AQ_BUY,100,110,0,10,0.1,0.1,true,BE_BY_R,1,0,false,TRAIL_FIXED,0,0,p),passed,failed);
       return failed==0;

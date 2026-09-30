@@ -74,6 +74,12 @@ public:
             {out.reason="ATR unavailable for trailing";return false;}
             distance=trailing_value*atr;
          }
+         else if(trailing_method==TRAIL_R)
+         {
+            if(original_risk<=0)
+            {out.reason="original risk unavailable for R trailing";return false;}
+            distance=trailing_value*original_risk;
+         }
          else {out.reason="trailing method not implemented in v1";return false;}
 
          if(!MathIsValidNumber(distance) || distance<tick_size)

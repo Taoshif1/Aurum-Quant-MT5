@@ -24,17 +24,24 @@ private:
    bool OriginalRisk(ulong ticket,ENUM_AQ_DIRECTION direction,double entry,double current_sl,double &risk,string &reason)
    {
       risk=0;
-      double raw=(direction==AQ_BUY ? entry-current_sl : current_sl-entry);
-      if(!MathIsValidNumber(raw) || raw<=0){reason="original risk cannot be derived from current stop";return false;}
-      if(MQLInfoInteger(MQL_TESTER)){risk=raw;reason="OK";return true;}
-      string key=StringFormat("AQR.%I64d.%I64u",AccountInfoInteger(ACCOUNT_LOGIN),ticket);
-      if(key=="" || StringLen(key)>63){reason="original-risk key invalid";return false;}
-      if(GlobalVariableCheck(key))
+      bool tester=(bool)MQLInfoInteger(MQL_TESTER);
+      string key="";
+      if(!tester)
       {
-         if(!GlobalVariableGet(key,risk) || !MathIsValidNumber(risk) || risk<=0)
-         {reason="persisted original risk invalid";return false;}
-         reason="OK";return true;
+         key=StringFormat("AQR.%I64d.%I64u",AccountInfoInteger(ACCOUNT_LOGIN),ticket);
+         if(key=="" || StringLen(key)>63){reason="original-risk key invalid";return false;}
+         if(GlobalVariableCheck(key))
+         {
+            if(!GlobalVariableGet(key,risk) || !MathIsValidNumber(risk) || risk<=0)
+            {reason="persisted original risk invalid";return false;}
+            reason="OK";return true;
+         }
       }
+
+      double raw=(direction==AQ_BUY ? entry-current_sl : current_sl-entry);
+      if(!MathIsValidNumber(raw) || raw<=0)
+      {reason="original risk unavailable after stop already moved";return false;}
+      if(tester){risk=raw;reason="OK";return true;}
       if(GlobalVariableSet(key,raw)==0){reason="cannot persist original position risk";return false;}
       risk=raw;reason="OK";return true;
    }
@@ -97,7 +104,7 @@ public:
       modified=0;
       if(!break_even_enabled && !trailing_enabled){reason="DISABLED";return true;}
       if(!ExecutionAllowed(reason))return false;
-      if(trailing_enabled && trailing_method!=TRAIL_FIXED && trailing_method!=TRAIL_ATR)
+      if(trailing_enabled && trailing_method!=TRAIL_FIXED && trailing_method!=TRAIL_ATR && trailing_method!=TRAIL_R)
       {reason="trailing method not implemented in v1";return false;}
 
       AQSymbolSpec spec;if(!AQSymbolProfile::Load(m_symbol,spec)){reason="symbol unavailable for position management";return false;}
@@ -121,7 +128,9 @@ public:
          double market=(direction==AQ_BUY?spec.bid:spec.ask);
          double original_risk=0;
          bool risk_side=(direction==AQ_BUY ? current_sl>0 && current_sl<entry : current_sl>entry);
-         if(risk_side && !OriginalRisk(ticket,direction,entry,current_sl,original_risk,reason))return false;
+         bool needs_original=(break_even_enabled && break_even_method==BE_BY_R) ||
+                             (trailing_enabled && trailing_method==TRAIL_R);
+         if((risk_side || needs_original) && !OriginalRisk(ticket,direction,entry,current_sl,original_risk,reason))return false;
          AQStopProposal proposal;
          if(!AQStopManagementPolicy::Build(direction,entry,market,current_sl,original_risk,spec.point,spec.tick_size,
               break_even_enabled,break_even_method,break_even_trigger_r,break_even_distance_points,

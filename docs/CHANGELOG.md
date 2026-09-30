@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.24 research preview — 2026-09-30
+
+- Add original-R trailing: TrailingValue is multiplied by the persisted original entry-to-SL risk distance.
+- Read persisted original risk before attempting to derive it from a stop that may already have moved beyond break-even.
+- Add BUY/SELL R-trailing regressions and fail closed when original risk is unavailable.
+- Extend the shared deterministic suite to 78 assertions; portable position-management coverage is now 16 assertions.
+- Swing trailing remains intentionally unsupported until a swing-window/pivot rule is explicitly specified.
+
 ## 1.23 research preview — 2026-09-30
 
 - Add optional break-even by persisted original-R or favorable broker-point distance.

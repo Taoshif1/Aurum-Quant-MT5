@@ -22,7 +22,7 @@ The owner authorized continued product implementation on 2026-09-30. This docume
 
 Gold and silver: weekdays only, broker-server session 07:00–20:00, USD high-impact news filter enabled. Bitcoin/Ethereum: no intraday session filter, weekends disabled unless explicitly enabled, news filter off. Forex: weekdays, USD calendar filter for the EURUSD example. Independent charts share a cross-symbol portfolio guard through the reserved Aurum magic range. New candidates are blocked when combined stop risk or grouped position/order exposure reaches the configured portfolio cap. The daily guard remains per instance.
 
-Break-even and trailing remain default off. Break-even supports original-R and favorable-distance triggers. Trailing v1 supports fixed broker-point distance and closed-ATR multiples; swing and R trailing remain unsupported and fail initialization. When both enabled, only a tighter stop is proposed. Existing positions are not closed merely because an entry filter blocks new trades, and broker-held stops remain the protection while disconnected. There is no Friday automatic liquidation.
+Break-even and trailing remain default off. Break-even supports original-R and favorable-distance triggers. Trailing v1 supports fixed broker-point distance, closed-ATR multiples and persisted-original-R distance; swing trailing remains unsupported and fails initialization. When both enabled, only a tighter stop is proposed. Existing positions are not closed merely because an entry filter blocks new trades, and broker-held stops remain the protection while disconnected. There is no Friday automatic liquidation.
 
 ## Acceptance
 

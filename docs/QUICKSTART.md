@@ -37,6 +37,6 @@ Daily loss, entry count and cooldown are scoped to symbol/magic. Cross-symbol Au
 | Netting symbol already has a position | Use an isolated symbol/account; the EA will not merge exposure. |
 | Entry cooldown/daily count reached | Wait for the specified bars/day; restart will not erase history. |
 | Strategy data invalid | Allow history/indicators to load and inspect the Experts log. |
-| Break-even/trailing blocked | Check the configured method/value. Break-even supports R or distance. Trailing v1 supports FIXED or ATR only; SWING and R trailing remain unsupported. |
+| Break-even/trailing blocked | Check the configured method/value. Break-even supports R or distance. Trailing v1 supports FIXED, ATR or R. SWING remains unsupported. |
 
 Keep the `AURUM|` entries from the Experts journal when reporting an issue, together with broker symbol properties, terminal build, inputs and the time of the event. Do not share account passwords.
