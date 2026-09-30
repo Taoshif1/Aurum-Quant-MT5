@@ -9,7 +9,7 @@ A price target is not a quality metric. This source preview must not be marketed
 | Broker loss/margin order plan | Deterministic stub-based success and failure cases passed |
 | Presets | Six files match all 48 EA inputs, share one reserved portfolio magic range, and retain OBSERVE/submission-off |
 | Portfolio risk guard | Implemented source-side: combined SL risk and exposure count include grouped open positions and active orders; missing-SL exposures fail closed |
-| Cross-chart execution serialization | Implemented source-side with an atomic terminal Global Variable mutex and final risk recheck before synchronous submission; native multi-chart stress testing pending |
+| Cross-chart execution serialization | Implemented source-side with an atomic terminal Global Variable mutex, final risk recheck before synchronous submission, and post-acceptance settlement hold; native multi-chart stress testing pending |
 | Official MetaEditor compilation | Pending for v1.2; require zero errors and warnings for EA and validation script |
 | Native self-test | Pending; require passed=62 and failed=0 |
 | Windows install/compile tools | Written; execution on Windows pending |
