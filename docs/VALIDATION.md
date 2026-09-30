@@ -20,7 +20,7 @@ The EA checks symbol selection/economics, timeframe validity, EMA handles, risk 
 
 ## Deterministic cases
 
-The shared suite invoked by both EA initialization and `Tests/AurumQuantValidation.mq5` contains 76 assertions covering risk equations and boundaries, normalization, directional/freeze stops, daily loss transitions and restart identity, OBSERVE, and LIVE without the master lock. Compile success proves type/API validity; execution in MT5 must report all passes before the harness is accepted operationally.
+The shared suite invoked by both EA initialization and `Tests/AurumQuantValidation.mq5` contains 78 assertions covering risk equations and boundaries, normalization, directional/freeze stops, daily loss transitions and restart identity, OBSERVE, and LIVE without the master lock. Compile success proves type/API validity; execution in MT5 must report all passes before the harness is accepted operationally.
 
 ## Smoke acceptance
 
@@ -30,10 +30,10 @@ On a broker/demo terminal, attach with OBSERVE and master lock false. Confirm RE
 
 `Tests/portable/regression.cpp` includes unchanged production headers with small test-only MQL API substitutes. It verifies quarter-lot precision, off-grid maximum flooring, volume-budget bounds across six step sizes, NaN/infinity rejection, unknown direction rejection, all 24 combinations of operating mode/master switch/account type, and zero position access or broker calls on locked modification/close/management paths.
 
-Run the C++ command in README. This is a logic regression check, **not** an MQL compilation result. The new MQL suite expects `passed=76|failed=0`; its terminal execution and native compilation remain required.
+Run the C++ command in README. This is a logic regression check, **not** an MQL compilation result. The new MQL suite expects `passed=78|failed=0`; its terminal execution and native compilation remain required.
 
 ## v1.2 additions
 
-The shared strategy suite adds 15 assertions for both directions, duplicate timestamps, timeout, wrong-side cancellation, trend change and invalid OHLC/ATR. Six portfolio-budget assertions cover magic grouping, exact-cap behavior, excess risk and position limits. Four lock-policy assertions cover free, exact-expiry, future-held and invalid lock states. Fourteen position-management assertions cover BUY/SELL break-even, original-risk persistence semantics, distance triggers, fixed/ATR trailing, tighten-only precedence and unsupported-method rejection. Portable order-plan cases test successful BUY/SELL plans and rejection for missing profit/margin calculations, insufficient free margin, zero ATR and a budget below minimum lot. Six preset files must match all 48 actual EA input names, have distinct magic numbers, and retain OBSERVE/submission-off locks.
+The shared strategy suite adds 15 assertions for both directions, duplicate timestamps, timeout, wrong-side cancellation, trend change and invalid OHLC/ATR. Six portfolio-budget assertions cover magic grouping, exact-cap behavior, excess risk and position limits. Four lock-policy assertions cover free, exact-expiry, future-held and invalid lock states. Sixteen position-management assertions cover BUY/SELL break-even, original-risk persistence semantics, distance triggers, fixed/ATR trailing, tighten-only precedence and unsupported-method rejection. Portable order-plan cases test successful BUY/SELL plans and rejection for missing profit/margin calculations, insufficient free margin, zero ATR and a budget below minimum lot. Six preset files must match all 48 actual EA input names, have distinct magic numbers, and retain OBSERVE/submission-off locks.
 
 Windows installer and compile-helper execution are pending in this Linux environment. The source can be reviewed and tested portably, but no v1.2 `.ex5` or official compiler result is supplied.
