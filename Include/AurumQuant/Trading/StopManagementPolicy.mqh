@@ -19,7 +19,7 @@ private:
       return false;
    }
 public:
-   static bool Build(ENUM_AQ_DIRECTION direction,double entry,double market,double current_sl,
+   static bool Build(ENUM_AQ_DIRECTION direction,double entry,double market,double current_sl,double original_risk,
                      double point,double tick_size,
                      bool break_even_enabled,ENUM_BE_METHOD break_even_method,
                      double break_even_trigger_r,double break_even_distance_points,
@@ -29,7 +29,7 @@ public:
       out.change=false;out.stop=current_sl;out.reason="NO_CHANGE";
       if((direction!=AQ_BUY && direction!=AQ_SELL) ||
          !MathIsValidNumber(entry) || !MathIsValidNumber(market) || !MathIsValidNumber(current_sl) ||
-         !MathIsValidNumber(point) || !MathIsValidNumber(tick_size) ||
+         !MathIsValidNumber(original_risk) || !MathIsValidNumber(point) || !MathIsValidNumber(tick_size) ||
          entry<=0 || market<=0 || current_sl<=0 || point<=0 || tick_size<=0)
       {out.reason="invalid stop-management inputs";return false;}
 
@@ -46,10 +46,9 @@ public:
             bool already_protected=(direction==AQ_BUY ? current_sl>=entry : current_sl<=entry);
             if(!already_protected)
             {
-               double initial_risk=(direction==AQ_BUY ? entry-current_sl : current_sl-entry);
-               if(initial_risk<=0 || !MathIsValidNumber(initial_risk))
-               {out.reason="invalid break-even risk distance";return false;}
-               trigger=favorable>=initial_risk*break_even_trigger_r;
+               if(original_risk<=0)
+               {out.reason="original risk unavailable for R break-even";return false;}
+               trigger=favorable>=original_risk*break_even_trigger_r;
             }
          }
          else if(break_even_method==BE_BY_DISTANCE)
