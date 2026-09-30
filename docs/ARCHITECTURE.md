@@ -10,7 +10,7 @@ The asset profile selects policy defaults; it never replaces actual broker speci
 
 - `Core`: settings/enums, transition logging, broker symbol snapshot, new-bar detection.
 - `Strategy`: experimental EMA trend state, pattern research functions, and breakout/pullback state interfaces. No candidate-producing rules exist yet.
-- `Strategy/IStrategy`: plugin boundary. The current BreakoutPullback scaffold can later coexist with TrendContinuation, VolatilityBreakout, or MeanReversion without changing risk/execution modules.
+- `Strategy/IStrategy`: plugin boundary. The current BreakoutPullback v1 state machine can later coexist with TrendContinuation, VolatilityBreakout, or MeanReversion without changing risk/execution modules.
 - `Strategy/MarketRegime`: inert interface returning `DATA_NOT_READY` or `TRANSITION` until ATR/normalized volatility, slope, ADX-style strength, and compression thresholds are approved.
 - `Strategy/SignalQuality`: unweighted evidence container for trend, breakout, pullback, confirmation, volatility, execution quality, and risk quality. It cannot trigger trades.
 - `Risk`: broker-aware volume calculation, start-of-day equity guard, and symbol-plus-magic position counting.
@@ -33,3 +33,9 @@ Initialization runs a checklist for symbol economics, timeframes, indicator hand
 ## Fail-closed conditions
 
 Initialization or decision flow blocks on invalid point/tick/volume data, disabled symbol trading, invalid configuration, unavailable enabled calendar data, filter rejection, daily limit, or position limit. A configured spread filter requires a positive per-symbol threshold.
+
+## v1.2 candidate path
+
+Closed bar → StrategyEngine (prior channel + closed ATR) → BreakoutPullback → filters/daily/position guards → EntryLimits history → OrderPlanner → TradeManager.
+
+`OrderPlan` handles broker account-currency loss and margin estimates. `EntryLimits` reads entry-deal history for daily counts and bar cooldown. Candidates are consumed only during the new-bar evaluation and never deferred. A chart must match the configured symbol so tick dispatch follows the traded market. Strategy state resets when evaluation bars are skipped.

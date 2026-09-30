@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 research preview — 2026-09-30
+
+- Implement documented closed-candle breakout/retest v1 with symmetric BUY/SELL rules, frozen breakout level, timeout and invalid-data cancellation.
+- Add ATR stop/target order plans using broker account-currency loss and margin estimates.
+- Add daily entry limits, bar cooldown, pending-order/netting protection and persistent submission identity.
+- Add silver, Ethereum, EURUSD and Generic presets; default risk is now 0.25% and all presets retain OBSERVE with order submission off.
+- Add on-chart new-entry pause/resume, installer backups, stricter compile-helper artifact checks, preset validation and portable CI.
+- Isolate Strategy Tester daily baselines and submission identities from terminal globals.
+- Extend shared MQL validation to 52 assertions; portable suite includes 15 strategy assertions and order-planner regressions.
+- Native compilation, Windows scripts, MT5 tests and performance evaluation remain pending.
+
+## Safety maintenance — 2026-09-30
 
 - Share execution locks across entry, position modification, and position closing.
 - Correct fractional lot-step precision and cap-before-floor volume normalization.

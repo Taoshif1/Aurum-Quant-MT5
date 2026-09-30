@@ -1,12 +1,10 @@
 # Risk model
 
-The research default is 1% per proposed trade, configurable and not a recommendation. Cash risk is `account equity × risk percent / 100`. For a valid entry and stop:
+The research default is 0.25% per proposed trade, configurable and not a recommendation. Cash risk is `account equity × risk percent / 100`. For a valid entry and stop, the active order planner asks `OrderCalcProfit` for the loss at the broker minimum lot, expressed in account currency:
 
-`ticks to stop = abs(entry - stop) / broker tick size`
+`raw volume = cash risk / abs(minimum-lot loss) × broker minimum lot`
 
-`loss per lot = ticks to stop × broker SYMBOL_TRADE_TICK_VALUE_LOSS`
-
-`raw volume = cash risk / loss per lot`
+The normalized volume is then priced again and rejected if estimated loss exceeds budget. `OrderCalcMargin` must return a finite amount within free margin. The execution boundary repeats the margin check. These are estimates: commission, swap, slippage and gaps can increase realized losses. The older tick-value `CalculateVolume` helper remains available and tested, but is not used for active order planning.
 
 Volume is capped at the broker maximum before rounding down on the grid anchored at minimum volume. This avoids returning an off-grid maximum. Eight-decimal normalization preserves fractional steps such as 0.25 and 0.125; unsupported finer grids fail closed. Floating-point tolerance is at most 1e-12 lots. It is never rounded upward into added risk. Prices are rounded to the nearest broker tick size and then to broker digits. Invalid point, digits, tick size/value, contract economics, volume grid, distances, equity, trading mode, or normalization produces no trade. No cross-asset lot equivalence is assumed.
 
@@ -14,11 +12,11 @@ Directional stop validation uses Bid for BUY protection and Ask for SELL protect
 
 ## Stops and targets
 
-The architecture enumerates `SWING`, `ATR`, and `FIXED_DISTANCE`. The preset selects ATR only as an experimental configuration marker; no entry/stop builder is active. ATR defaults (14, 2.0) are not validated. A future R target uses `target distance = initial stop risk distance × RewardRiskRatio`; default 2.0 means 2R and does not imply profitability.
+Only the ATR model is implemented in v1. ATR(14) on closed entry bars times ATRMultiplier (default 2.0) determines stop distance. Stops round outward to the broker tick. TP uses actual rounded entry-to-stop distance times RewardRiskRatio (default 2.0), then rounds outward. Selecting swing/fixed stops while the research strategy is enabled blocks initialization. These settings are not validated performance parameters.
 
 ## Daily guard
 
-The denominator is account equity captured on the first initialization of this symbol+magic on a broker-server day. Measurement start time and matching-position floating P/L are captured with it. All three are persisted as MT5 terminal Global Variables keyed by account, magic, symbol, and day, so chart/EA restarts reuse them. The numerator is only this EA's symbol+magic realized deal profit, commission, swap, and fee since that measurement start plus the change in matching open-position profit/swap from its captured baseline. Subtracting the starting floating value prevents an overnight position's pre-existing P/L from becoming a new-day loss.
+The denominator is account equity captured on the first initialization of this symbol+magic on a broker-server day. Measurement start time and matching-position floating P/L are captured with it. Outside Strategy Tester, all three are persisted as MT5 terminal Global Variables keyed by account, magic, symbol, and day, so chart/EA restarts reuse them. The numerator is only this EA's symbol+magic realized deal profit, commission, swap, and fee since that measurement start plus the change in matching open-position profit/swap from its captured baseline. Subtracting the starting floating value prevents an overnight position's pre-existing P/L from becoming a new-day loss.
 
 `daily loss % = max(0, -owned EA P/L / persisted day-start equity × 100)`
 
@@ -31,3 +29,5 @@ Deterministic cases are in `Tests/AurumQuantValidation.mq5`: equity/risk/SL vari
 Break-even and trailing are separate, default-off features. Future break-even triggers may use R or distance; trailing may use fixed, ATR, swing, or R methods. If both are later enabled, the approved precedence must only tighten risk, never loosen a stop. Spread, commission, slippage, and minimum stop/freeze distance can make nominal break-even economically negative.
 
 All position modification and close requests use the same execution policy as entries. The position manager starts in OBSERVE with its master lock off, including when initialized through its legacy two-argument interface. Account type is checked at every mutation. These checks are independent of future break-even or trailing feature switches.
+
+Tester baselines remain in memory to avoid contamination between passes. The guard is per symbol/magic and is not an account-wide portfolio limit.

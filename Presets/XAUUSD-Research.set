@@ -1,16 +1,17 @@
-; Aurum Quant MT5 — broker XAUUSD research baseline, not optimized
+; Aurum Quant v1.2 - unvalidated research, OBSERVE only
+; Spread limits are broker-point placeholders; calibrate for your exact symbol.
 OperatingMode=0
 EnableOrderSubmission=false
 TradeSymbol=
 AssetProfile=2
-MagicNumber=26083002
+MagicNumber=26093002
 RunDeterministicSelfTests=true
 EntryTimeframe=15
 TrendTimeframe=16385
 FastEMAPeriod=50
 SlowEMAPeriod=200
 MaxTickAgeSeconds=120
-RiskPercent=1.0
+RiskPercent=0.25
 DailyLossLimitPercent=3.0
 MaxOpenPositions=1
 RewardRiskRatio=2.0
@@ -35,3 +36,11 @@ BreakEvenDistancePoints=0.0
 EnableTrailingStop=false
 TrailingMethod=0
 TrailingValue=0.0
+EnableResearchStrategy=true
+BreakoutLookback=20
+BreakoutBufferATR=0.10
+RetestToleranceATR=0.25
+RetestTimeoutBars=6
+MaxEntriesPerDay=3
+CooldownBars=4
+MaxDeviationPoints=20

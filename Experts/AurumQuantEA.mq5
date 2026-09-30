@@ -1,7 +1,7 @@
 #property copyright "Aurum Quant MT5 research project"
-#property version   "1.100"
+#property version   "1.200"
 #property strict
-#property description "Multi-asset research engine. No approved entry rules."
+#property description "Multi-asset breakout/retest research EA. Unvalidated strategy."
 
 #include <AurumQuant/Core/Config.mqh>
 #include <AurumQuant/Core/Logger.mqh>
@@ -16,6 +16,8 @@
 #include <AurumQuant/Risk/RiskManager.mqh>
 #include <AurumQuant/Risk/DailyGuard.mqh>
 #include <AurumQuant/Risk/PositionGuard.mqh>
+#include <AurumQuant/Risk/EntryLimits.mqh>
+#include <AurumQuant/Trading/OrderPlan.mqh>
 #include <AurumQuant/Filters/SpreadFilter.mqh>
 #include <AurumQuant/Filters/SessionFilter.mqh>
 #include <AurumQuant/Filters/NewsFilter.mqh>
@@ -40,8 +42,18 @@ input int FastEMAPeriod=50;
 input int SlowEMAPeriod=200;
 input int MaxTickAgeSeconds=120;
 
+input group "Breakout/retest v1 - unvalidated research"
+input bool EnableResearchStrategy=false;
+input int BreakoutLookback=20;
+input double BreakoutBufferATR=0.10;
+input double RetestToleranceATR=0.25;
+input int RetestTimeoutBars=6;
+input int MaxEntriesPerDay=3;
+input int CooldownBars=4;
+input ulong MaxDeviationPoints=20;
+
 input group "Risk research defaults"
-input double RiskPercent=1.0;
+input double RiskPercent=0.25;
 input double DailyLossLimitPercent=3.0;
 input int MaxOpenPositions=1;
 input double RewardRiskRatio=2.0;
@@ -77,6 +89,8 @@ AQTradeManager g_trader; AQPositionManager g_positions; AQDashboard g_dashboard;
 ENUM_TREND_STATE g_trend=TREND_DATA_NOT_READY; ENUM_SIGNAL_STATE g_signal=NO_SETUP; ENUM_NEWS_STATE g_news=NEWS_DISABLED;
 string g_critical="",g_spread_state="",g_session_state="",g_news_state="DISABLED",g_weekend_state="";
 double g_daily_loss=0; bool g_engine_ready=false,g_symbol_valid=false,g_trend_initialized=false,g_daily_initialized=false;
+bool g_paused=false;
+string g_risk_status="No candidate evaluated",g_last_decision="";
 datetime g_evaluation_bar=0,g_evaluation_time=0,g_last_news_check=0;
 
 void LoadSettings()
@@ -92,9 +106,14 @@ int OnInit()
    LoadSettings();g_log.Init(g_cfg.symbol,g_cfg.magic);g_diagnostic.Reset();
    if(RunDeterministicSelfTests){int tests_passed=0,tests_failed=0;g_diagnostic.Check(AQValidationSuite::Run(tests_passed,tests_failed),StringFormat("deterministic self-tests failed %d",tests_failed));}
    g_diagnostic.Check(g_cfg.symbol!="","symbol is empty");
+   g_diagnostic.Check(g_cfg.symbol==_Symbol,"attach EA to the configured symbol chart");
+   g_diagnostic.Check(!EnableBreakEven && !EnableTrailingStop,"break-even/trailing are not implemented in v1");
+   g_diagnostic.Check(!EnableResearchStrategy || (StopLossModel==SL_ATR && ATRMultiplier>0 && MathIsValidNumber(ATRMultiplier)),"v1 requires a positive ATR stop model");
+   g_diagnostic.Check(MaxEntriesPerDay>=1 && CooldownBars>=0,"invalid entry frequency limits");
+   g_diagnostic.Check(g_strategy.Init(g_cfg.symbol,EntryTimeframe,EnableResearchStrategy,BreakoutLookback,ATRPeriod,BreakoutBufferATR,RetestToleranceATR,RetestTimeoutBars),"strategy/ATR initialization failed");
    g_diagnostic.Check(PeriodSeconds(EntryTimeframe)>0 && PeriodSeconds(TrendTimeframe)>0,"invalid timeframe");
-   g_diagnostic.Check(RiskPercent>0 && RiskPercent<=100 && DailyLossLimitPercent>0 && DailyLossLimitPercent<=100 && MaxOpenPositions>=1 && RewardRiskRatio>0,"invalid risk inputs");
-   g_diagnostic.Check(!EnableSpreadFilter || MaxSpreadPoints>0,"spread limit must be positive");
+   g_diagnostic.Check(RiskPercent>0 && RiskPercent<=100 && DailyLossLimitPercent>0 && DailyLossLimitPercent<=100 && MaxOpenPositions>=1 && RewardRiskRatio>0 && MathIsValidNumber(RewardRiskRatio),"invalid risk inputs");
+   g_diagnostic.Check(!EnableSpreadFilter || (MaxSpreadPoints>0 && MathIsValidNumber(MaxSpreadPoints)),"spread limit must be positive");
    g_diagnostic.Check(!EnableSessionFilter || (SessionStartHour>=0 && SessionStartHour<=23 && SessionEndHour>=0 && SessionEndHour<=23),"invalid session hours");
    g_diagnostic.Check(!EnableNewsFilter || (NewsMinutesBefore>=0 && NewsMinutesAfter>=0 && NewsCurrency!=""),"invalid news configuration");
    g_diagnostic.Check(OperatingMode==MODE_OBSERVE || OperatingMode==MODE_DEMO || OperatingMode==MODE_LIVE,"invalid operating mode");
@@ -103,13 +122,14 @@ int OnInit()
    if(g_symbol_valid){g_trend_initialized=g_trend_engine.Init(g_cfg.symbol,g_cfg.trend_tf,FastEMAPeriod,SlowEMAPeriod);g_diagnostic.Check(g_trend_initialized,"indicator handles unavailable");}
    string daily_reason="symbol invalid";if(g_symbol_valid)g_daily_initialized=g_daily.Init(g_cfg.symbol,MagicNumber,DailyLossLimitPercent,daily_reason);g_diagnostic.Check(g_daily_initialized,"daily guard: "+daily_reason);
    g_market.Init(g_cfg.symbol,g_cfg.entry_tf);g_trader.Init(OperatingMode,EnableOrderSubmission,MagicNumber,g_cfg.symbol);g_positions.Init(MagicNumber,g_cfg.symbol,OperatingMode,EnableOrderSubmission);
+   g_trader.SetDeviation(MaxDeviationPoints);
    string execution_reason;bool execution_allowed=g_trader.ExecutionAllowed(execution_reason);g_diagnostic.Check(!(OperatingMode==MODE_OBSERVE && execution_allowed),"OBSERVE execution assertion failed");
    if(g_symbol_valid)g_log.Event("SYMBOL_VALID",StringFormat("digits=%d point=%g tick_size=%g tick_value_loss=%g contract=%g volume=[%g,%g] step=%g stops=%d freeze=%d mode=%d",g_spec.digits,g_spec.point,g_spec.tick_size,g_spec.tick_value_loss,g_spec.contract_size,g_spec.volume_min,g_spec.volume_max,g_spec.volume_step,g_spec.stops_level,g_spec.freeze_level,g_spec.trade_mode));
    g_engine_ready=g_diagnostic.Ready();g_critical=(g_engine_ready?"":g_diagnostic.Reasons());g_log.Event("SELF_DIAGNOSTIC",g_engine_ready?"READY":"BLOCKED: "+g_critical);g_log.Event("SAFETY",execution_reason);
    return INIT_SUCCEEDED;
 }
 
-void OnDeinit(const int reason){if(g_trend_initialized)g_trend_engine.Shutdown();g_dashboard.Clear();g_log.Event("DEINIT",IntegerToString(reason));}
+void OnDeinit(const int reason){g_strategy.Shutdown();g_trend_engine.Shutdown();g_dashboard.Clear();g_log.Event("DEINIT",IntegerToString(reason));}
 
 void OnTick()
 {
@@ -118,17 +138,54 @@ void OnTick()
    bool session_ok=AQSessionFilter::Pass(EnableSessionFilter,SessionStartHour,SessionEndHour,g_session_state);bool weekend_ok=AQSessionFilter::WeekendPass(AllowWeekendTrading,g_weekend_state);
    datetime server=TimeTradeServer();if(g_last_news_check==0 || server-g_last_news_check>=60){g_news=AQNewsFilter::Evaluate(EnableNewsFilter,NewsMinutesBefore,NewsMinutesAfter,NewsCurrency,g_news_state);g_last_news_check=server;}
    bool news_ok=(g_news==NEWS_CLEAR || g_news==NEWS_DISABLED);string daily_reason="daily guard unavailable";bool daily_block=(!g_daily_initialized || g_daily.IsBlocked(g_daily_loss,daily_reason));
-   string position_reason;bool position_ok=AQPositionGuard::CanOpen(g_cfg.symbol,MagicNumber,MaxOpenPositions,position_reason);int tick_age=INT_MAX;bool fresh=g_symbol_valid && g_market.Fresh(MaxTickAgeSeconds,tick_age);datetime closed_bar=0;
+   string position_reason;bool position_ok=AQPositionGuard::CanOpen(g_cfg.symbol,MagicNumber,MaxOpenPositions,position_reason);int tick_age=INT_MAX;bool fresh=g_symbol_valid && g_market.Fresh(MaxTickAgeSeconds,tick_age);datetime closed_bar=0;bool evaluated=false;
    if(g_engine_ready && fresh && g_market.IsNewBar(closed_bar))
    {
-      g_evaluation_bar=closed_bar;g_evaluation_time=server;g_log.Event("NEW_BAR",StringFormat("tf=%s|closed_bar=%s",EnumToString(EntryTimeframe),TimeToString(closed_bar,TIME_DATE|TIME_MINUTES)));
+      evaluated=true;g_evaluation_bar=closed_bar;g_evaluation_time=server;g_log.Event("NEW_BAR",StringFormat("tf=%s|closed_bar=%s",EnumToString(EntryTimeframe),TimeToString(closed_bar,TIME_DATE|TIME_MINUTES)));
       ENUM_TREND_STATE previous=g_trend;g_trend=g_trend_engine.Evaluate();if(previous!=g_trend)g_log.Event("TREND_CHANGE",AQTrendName(g_trend));g_signal=g_strategy.Evaluate(g_trend,closed_bar);
    }
    string blocked="";
-   if(!g_engine_ready || !g_symbol_valid)blocked=g_critical;else if(!fresh)blocked=StringFormat("market data stale (%d seconds)",tick_age);else if(!spread_ok)blocked=g_spread_state;else if(!session_ok)blocked="session filter";else if(!weekend_ok)blocked=g_weekend_state;else if(!news_ok)blocked=g_news_state;else if(daily_block)blocked=daily_reason;else if(!position_ok)blocked=position_reason;else if(g_trend==TREND_DATA_NOT_READY)blocked="trend data not ready";
-   string decision=(blocked!=""?"BLOCKED":"WAIT - research entry rules not approved");int count=AQPositionGuard::Count(g_cfg.symbol,MagicNumber);
+   if(!g_engine_ready || !g_symbol_valid)blocked=g_critical;else if(!fresh)blocked=StringFormat("market data stale (%d seconds)",tick_age);else if(!spread_ok)blocked=g_spread_state;else if(!session_ok)blocked="session filter";else if(!weekend_ok)blocked=g_weekend_state;else if(!news_ok)blocked=g_news_state;else if(daily_block)blocked=daily_reason;else if(!position_ok)blocked=position_reason;else if(g_trend==TREND_DATA_NOT_READY)blocked="trend data not ready";else if(g_signal==SIGNAL_BLOCKED)blocked="strategy data invalid or unavailable";
+   if(g_paused)blocked="entries paused by user";
+   string decision=(blocked!=""?"BLOCKED":(EnableResearchStrategy?"WAIT - breakout/retest v1":"OBSERVATION - strategy disabled"));
+   bool candidate=evaluated && (g_signal==BUY_CANDIDATE || g_signal==SELL_CANDIDATE);
+   if(candidate)
+   {
+      string why=blocked;AQOrderPlan plan;
+      bool ready=why=="";
+      if(ready)ready=AQEntryLimits::Pass(g_cfg.symbol,MagicNumber,MaxEntriesPerDay,CooldownBars,EntryTimeframe,why);
+      if(ready)ready=AQOrderPlanner::Build(g_spec,g_signal==BUY_CANDIDATE?AQ_BUY:AQ_SELL,g_strategy.ATR(),ATRMultiplier,RewardRiskRatio,RiskPercent,plan,why);
+      if(ready)
+      {
+         g_risk_status=StringFormat("%.8f lots | estimated SL loss %.2f | margin %.2f",plan.volume,plan.estimated_loss,plan.margin);
+         g_log.Event("CANDIDATE",StringFormat("direction=%s|bar=%I64d|entry=%g|sl=%g|tp=%g|volume=%.8f",g_signal==BUY_CANDIDATE?"BUY":"SELL",(long)closed_bar,plan.entry,plan.sl,plan.tp,plan.volume));
+         if(g_trader.ExecutionAllowed(why))
+         {
+            AQTradeResult result;bool accepted=false;
+            if(g_signal==BUY_CANDIDATE)accepted=g_trader.Buy(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
+            else accepted=g_trader.Sell(closed_bar,g_cfg.symbol,plan.volume,plan.entry,plan.sl,plan.tp,"Aurum v1",result);
+            decision=accepted?"REQUEST ACCEPTED":"REQUEST REJECTED";why=result.description;
+         }
+         else decision="CANDIDATE ONLY - execution locked";
+      }
+      else {decision="CANDIDATE DISCARDED";g_risk_status=why;}
+      g_log.Event("CANDIDATE_DECISION",decision+" | "+why);
+      // This signal is never retried on later ticks, including broker rejection.
+   }
+   if(decision!=g_last_decision){g_log.Event("DECISION",decision+" | "+blocked);g_last_decision=decision;}
+   int count=AQPositionGuard::Count(g_cfg.symbol,MagicNumber);
    string execution_reason;bool execution_allowed=g_trader.ExecutionAllowed(execution_reason);string lock_state=(execution_allowed?"ARMED":"LOCKED: "+execution_reason);string freshness=(fresh?StringFormat("FRESH (%d seconds)",tick_age):StringFormat("STALE/UNAVAILABLE (%d seconds)",tick_age));
-   g_dashboard.Render(g_cfg,(g_engine_ready?"READY":"BLOCKED"),(g_symbol_valid?"VALID":"INVALID"),freshness,lock_state,"WAITING FOR APPROVED ENTRY/SL",g_evaluation_bar,g_evaluation_time,g_trend,g_signal,spread,g_spread_state,g_session_state,g_news_state,g_weekend_state,g_daily_loss,count,decision,blocked);
+   g_dashboard.PauseButton(g_paused);
+   g_dashboard.Render(g_cfg,(g_engine_ready?"READY":"BLOCKED"),(g_symbol_valid?"VALID":"INVALID"),freshness,lock_state,g_risk_status,g_evaluation_bar,g_evaluation_time,g_trend,g_signal,spread,g_spread_state,g_session_state,g_news_state,g_weekend_state,g_daily_loss,count,decision,blocked);
+}
+
+void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
+{
+   if(id==CHARTEVENT_OBJECT_CLICK && sparam=="AQ_PAUSE_ENTRIES")
+   {
+      g_paused=!g_paused;g_dashboard.PauseButton(g_paused);
+      g_log.Event("USER_PAUSE",g_paused?"new entries paused; existing positions unchanged":"new entry evaluation resumed");
+   }
 }
 
 double OnTester(){AQTesterMetrics metrics;AQTesterResearch::Capture(metrics);AQTesterResearch::Log(metrics);return AQTesterResearch::UntunedDiagnosticScore(metrics);}

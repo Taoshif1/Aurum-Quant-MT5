@@ -17,7 +17,7 @@ public:
    bool Fresh(int maximum_age_seconds,int &age_seconds)
    {
       datetime tick_time=(datetime)SymbolInfoInteger(m_symbol,SYMBOL_TIME); datetime server=TimeTradeServer();
-      if(tick_time<=0 || server<=0) { age_seconds=INT_MAX; return false; }
+      if(tick_time<=0 || server<=0 || tick_time>server+5) { age_seconds=INT_MAX; return false; }
       age_seconds=(int)MathMax(0,server-tick_time); return age_seconds<=maximum_age_seconds;
    }
    bool CanSubmit(datetime signal_bar,string &reason)

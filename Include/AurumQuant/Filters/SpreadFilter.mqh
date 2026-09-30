@@ -3,7 +3,7 @@
 class AQSpreadFilter
 {
 public: static bool Pass(bool enabled,double current,double maximum,string &reason)
-   { if(!enabled) { reason="DISABLED"; return true; } if(maximum<=0 || current>maximum) { reason=StringFormat("BLOCKED %.1f > %.1f points",current,maximum); return false; } reason="PASS"; return true; }
+   { if(!enabled) { reason="DISABLED"; return true; } if(!MathIsValidNumber(current) || !MathIsValidNumber(maximum) || current<0 || maximum<=0 || current>maximum) { reason=StringFormat("BLOCKED %.1f > %.1f points",current,maximum); return false; } reason="PASS"; return true; }
 };
 #endif
 

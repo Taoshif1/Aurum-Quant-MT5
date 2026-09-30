@@ -38,3 +38,14 @@ inline int position_reads=0,trade_calls=0;
 inline bool PositionSelectByTicket(unsigned long){++position_reads;return true;}
 inline string PositionGetString(int){return "SYNTH";}
 inline long PositionGetInteger(int p){return p==POSITION_MAGIC?123:POSITION_TYPE_BUY;}
+
+inline double MathCeil(double x){return std::ceil(x);}
+enum ENUM_ORDER_TYPE{ORDER_TYPE_BUY,ORDER_TYPE_SELL};
+enum {ACCOUNT_EQUITY=1000,ACCOUNT_MARGIN_FREE};
+inline double test_equity=10000,test_free_margin=10000;
+inline bool test_profit_available=true,test_margin_available=true;
+inline double AccountInfoDouble(int p){return p==ACCOUNT_EQUITY?test_equity:test_free_margin;}
+inline bool OrderCalcProfit(ENUM_ORDER_TYPE type,string,double volume,double entry,double stop,double &profit){
+ profit=(type==ORDER_TYPE_BUY?stop-entry:entry-stop)*volume*100;return test_profit_available;
+}
+inline bool OrderCalcMargin(ENUM_ORDER_TYPE,string,double volume,double,double &margin){margin=volume*1000;return test_margin_available;}
