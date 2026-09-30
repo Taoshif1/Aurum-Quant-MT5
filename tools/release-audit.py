@@ -161,6 +161,7 @@ def main() -> None:
     require("python3 tools/build-source-release.py" in workflow, "CI source build gate missing")
     require("python3 tools/check-source-release.py" in workflow, "CI source verification gate missing")
     require("python3 tools/check-native-evidence.py --self-test" in workflow, "CI native-evidence verifier self-test missing")
+    require("python3 tools/parse-tester-stats.py --self-test" in workflow, "CI tester-stats parser self-test missing")
     require("dist/" in gitignore.splitlines(), "generated dist/ must remain ignored")
     require("evidence/" in gitignore.splitlines(), "generated evidence/ must remain ignored")
 
@@ -170,6 +171,7 @@ def main() -> None:
         "tools/build-source-release.py",
         "tools/check-source-release.py",
         "tools/check-native-evidence.py",
+        "tools/parse-tester-stats.py",
         "tools/release-audit.py",
     ):
         require(

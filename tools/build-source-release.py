@@ -25,6 +25,7 @@ EXACT_FILES = (
     Path("tools/build-source-release.py"),
     Path("tools/check-source-release.py"),
     Path("tools/check-native-evidence.py"),
+    Path("tools/parse-tester-stats.py"),
     Path("tools/release-audit.py"),
 )
 GLOBS = (

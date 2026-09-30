@@ -34,6 +34,7 @@ The installer backs up existing project files and copies source, includes, the v
 5. Calibrate `MaxSpreadPoints` against the exact broker symbol. Preset spread values are placeholders. Generic intentionally starts with zero and blocks until configured.
 6. Start in OBSERVE and check diagnostics. Follow [QUICKSTART](docs/QUICKSTART.md) before demo execution.
 7. Run **Scripts → AurumQuantBrokerProbe** with the exact broker symbols you plan to validate. Then use `tools/Collect-Native-Evidence.ps1` to collect clean compiler logs, the 78/0 validation journal, the probe CSV, and optional tester artifacts into one checksummed evidence folder. Verify that folder independently with `python3 tools/check-native-evidence.py PATH_TO_EVIDENCE_FOLDER`.
+8. For Strategy Tester journals, convert the structured `AURUM|TESTER_STATS|...` record into strict JSON with `python3 tools/parse-tester-stats.py TESTER_JOURNAL.log --output tester-summary.json`. The parser reports raw metrics only and does not assign a performance verdict.
 
 ## Presets
 

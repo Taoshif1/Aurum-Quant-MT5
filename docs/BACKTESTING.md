@@ -12,6 +12,8 @@ Gold tests must use that broker's XAUUSD variant and session/calendar behavior, 
 
 `OnTester()` captures net profit, gross profit/loss, profit factor, expected payoff, equity drawdown and relative drawdown, recovery factor, platform Sharpe ratio, trade/win/loss counts, and maximum consecutive losses. It logs them and returns `0.0`: the custom score is intentionally inert until a research criterion is approved. Raw net profit must never be the sole objective.
 
+`tools/parse-tester-stats.py` extracts the final `AURUM|TESTER_STATS|...` record from a tester journal into JSON. It requires the complete metric field set, finite numeric values, non-negative counts/drawdown, and internally consistent win/loss totals. Optional metadata can be supplied as a JSON object via `--metadata-json`. The parser deliberately does not rank, score, or label performance.
+
 A future composite robustness criterion should penalize excessive drawdown, inadequate trade count, poor profit factor, unstable returns, and sharp parameter dependence; it may reward positive expectancy, adequate sample size, consistency across folds/assets/regimes, and reasonable drawdown. No weights or final formula are approved.
 
 ## Strict future protocol
@@ -49,5 +51,6 @@ Future simulations should randomize trade order, probabilistically skip trades, 
 5. Run Visual mode to verify dashboard, new-bar logs, filters, and no trades.
 6. Export the tester report and journal alongside the test metadata.
 7. Run `AurumQuantBrokerProbe` for the exact broker symbols used, then call `tools/Collect-Native-Evidence.ps1` with the exported report/journal so hashes and source commit are captured together.
+8. Parse the tester journal with `python3 tools/parse-tester-stats.py TESTER_JOURNAL.log --metadata-json RUN_METADATA.json --output tester-summary.json`; keep that JSON beside the original report/journal.
 
 Economic Calendar functions use broker-server time and may be unavailable or behave differently in Strategy Tester/offline agents. An enabled unavailable calendar is a fail-closed condition; test runs must record whether calendar data was actually supplied.

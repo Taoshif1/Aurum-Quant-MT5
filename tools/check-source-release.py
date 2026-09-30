@@ -69,6 +69,7 @@ def main() -> None:
         "tools/build-source-release.py",
         "tools/check-source-release.py",
         "tools/check-native-evidence.py",
+        "tools/parse-tester-stats.py",
         "tools/release-audit.py",
         "docs/SOURCE-RELEASE.md",
         "Presets/BTCUSD-Research.set",

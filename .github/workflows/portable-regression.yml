@@ -23,6 +23,8 @@ jobs:
         run: python3 tools/release-audit.py
       - name: Self-test native evidence verifier
         run: python3 tools/check-native-evidence.py --self-test
+      - name: Self-test Strategy Tester stats parser
+        run: python3 tools/parse-tester-stats.py --self-test
       - name: Build deterministic source release
         run: python3 tools/build-source-release.py
       - name: Verify source release
